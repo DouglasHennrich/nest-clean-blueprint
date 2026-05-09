@@ -1,0 +1,8 @@
+packages:
+  - "."
+  - "mcp-server"
+
+allowBuilds:
+  '@nestjs/core': true
+  '@swc/core': true
+  esbuild: true

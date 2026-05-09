@@ -1,0 +1,34 @@
+import { Injectable } from '@nestjs/common';
+import { AbstractPresenter } from '@/@shared/classes/presenter';
+import { I{{Entity}}Model } from '../models/{{entity}}.model';
+
+export interface I{{Entity}}PresenterResponse {
+  id: string;
+  // TODO: add fields exposed by the API.
+  createdAt: string;
+  updatedAt: string;
+}
+
+export abstract class I{{Entity}}Presenter extends AbstractPresenter<
+  I{{Entity}}Model,
+  I{{Entity}}PresenterResponse
+> {}
+
+@Injectable()
+export class {{Entity}}Presenter implements I{{Entity}}Presenter {
+  present(entity: I{{Entity}}Model): I{{Entity}}PresenterResponse {
+    return {
+      id: entity.id,
+      createdAt: entity.createdAt.toISOString(),
+      updatedAt: entity.updatedAt.toISOString(),
+    };
+  }
+
+  presentWithoutRelations(entity: I{{Entity}}Model): I{{Entity}}PresenterResponse {
+    return this.present(entity);
+  }
+
+  presentMany(entities: I{{Entity}}Model[]): I{{Entity}}PresenterResponse[] {
+    return entities.map((e) => this.present(e));
+  }
+}

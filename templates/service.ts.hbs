@@ -1,0 +1,37 @@
+import { Injectable } from '@nestjs/common';
+import { AbstractService } from '@/@shared/classes/service';
+import { Result } from '@/@shared/classes/result';
+import { ILogger, CustomLogger } from '@/@shared/classes/custom-logger';
+import { IRequestContext } from '@/@shared/protocols/request-context.struct';
+import { I{{EntitiesPlural}}Repository } from '../repositories/{{entities-plural}}.repository';
+import { I{{Entity}}Model } from '../models/{{entity}}.model';
+import { T{{Action}}{{Entity}}DtoServiceSchema } from '../dto/{{entity}}.dto';
+
+export abstract class T{{Action}}{{Entity}}Service extends AbstractService<
+  T{{Action}}{{Entity}}DtoServiceSchema,
+  I{{Entity}}Model
+> {}
+
+@Injectable()
+export class {{Action}}{{Entity}}Service implements T{{Action}}{{Entity}}Service {
+  public logger: ILogger = new CustomLogger({{Action}}{{Entity}}Service.name);
+
+  constructor(
+    /// //////////////////////////
+    //  Repositories
+    /// //////////////////////////
+    private {{entitiesPlural}}Repository: I{{EntitiesPlural}}Repository,
+  ) {}
+
+  async execute(
+    dto: T{{Action}}{{Entity}}DtoServiceSchema,
+    context?: IRequestContext,
+  ): Promise<Result<I{{Entity}}Model>> {
+    this.logger.log(`{{Action}} {{entity}}: ${JSON.stringify(dto)}`, context);
+
+    // TODO: implement business logic.
+    // Always return Result.success / Result.fail. NEVER throw.
+
+    return Result.fail(new Error('Not implemented'));
+  }
+}

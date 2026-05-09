@@ -1,0 +1,25 @@
+import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { AbstractRepository } from '@/@shared/classes/repository';
+import { ILogger, CustomLogger } from '@/@shared/classes/custom-logger';
+import { TEnvService } from '@/modules/env/services/env.service';
+import { {{Entity}}Entity } from '../entities/{{entity}}.entity';
+import { I{{Entity}}Model } from '../models/{{entity}}.model';
+
+export abstract class I{{EntitiesPlural}}Repository extends AbstractRepository<
+  {{Entity}}Entity,
+  I{{Entity}}Model
+> {}
+
+@Injectable()
+export class {{EntitiesPlural}}Repository extends I{{EntitiesPlural}}Repository {
+  constructor(
+    @InjectRepository({{Entity}}Entity)
+    repository: Repository<{{Entity}}Entity>,
+    envService: TEnvService,
+  ) {
+    const logger: ILogger = new CustomLogger({{EntitiesPlural}}Repository.name);
+    super(repository, envService, logger);
+  }
+}

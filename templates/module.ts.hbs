@@ -1,0 +1,28 @@
+import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { EnvModule } from '@/modules/env/env.module';
+
+import { {{Entity}}Entity } from './entities/{{entity}}.entity';
+import {
+  I{{EntitiesPlural}}Repository,
+  {{EntitiesPlural}}Repository,
+} from './repositories/{{entities-plural}}.repository';
+import {
+  I{{Entity}}Presenter,
+  {{Entity}}Presenter,
+} from './presenters/{{entity}}.presenter';
+
+// TODO: import services and controllers.
+
+@Module({
+  imports: [TypeOrmModule.forFeature([{{Entity}}Entity]), EnvModule],
+  controllers: [
+    // TODO: register one controller per action.
+  ],
+  providers: [
+    { provide: I{{EntitiesPlural}}Repository, useClass: {{EntitiesPlural}}Repository },
+    { provide: I{{Entity}}Presenter, useClass: {{Entity}}Presenter },
+    // TODO: { provide: T<Action>{{Entity}}Service, useClass: <Action>{{Entity}}Service },
+  ],
+})
+export class {{EntitiesPlural}}Module {}

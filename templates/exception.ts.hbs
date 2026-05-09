@@ -1,0 +1,14 @@
+import { HttpStatus } from '@nestjs/common';
+import { AbstractApplicationException } from '@/@shared/errors/abstract-application-exception';
+import { IRequestContext } from '@/@shared/protocols/request-context.struct';
+
+export class {{Entity}}NotFoundException extends AbstractApplicationException {
+  constructor(id: string, context?: IRequestContext) {
+    super(
+      `{{Entity}} with id ${id} not found`,
+      '{{Entity}}NotFoundException',
+      HttpStatus.NOT_FOUND,
+      context,
+    );
+  }
+}

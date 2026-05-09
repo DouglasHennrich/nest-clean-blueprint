@@ -1,0 +1,105 @@
+name: backoffice
+
+services:
+  app:
+    container_name: backoffice
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    restart: unless-stopped
+    ports:
+      - '3000:3000'
+      
+    env_file:
+      - .env
+
+    environment:
+      - NODE_ENV=production
+
+    # Permitir container acessar serviços no host EC2
+    extra_hosts:
+      - "host.docker.internal:host-gateway"  # Mapeia host.docker.internal para o IP do host
+
+    depends_on:
+      database:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+    volumes:
+      - backoffice-logs:/app/logs
+
+    security_opt:
+      - no-new-privileges:true  # Prevent privilege escalation
+
+    networks:
+      - backoffice-network
+
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/api/v1/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  database:
+    container_name: backoffice-postgres
+    image: postgres:17-alpine
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      POSTGRES_DB: ${DATABASE_DB_NAME}
+      POSTGRES_USER: ${DATABASE_USER}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+    ports:
+      - '5432:5432'
+    volumes:
+      - backoffice-postgres-data:/var/lib/postgresql/data
+    networks:
+      - backoffice-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USER:-user} -d ${DATABASE_DB_NAME:-password}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    command: 
+      - "postgres"
+      - "-c"
+      - "max_connections=200"
+
+  redis:
+    container_name: backoffice-redis
+    image: redis:7-alpine
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - '6379:6379'
+    volumes:
+      - backoffice-redis-data:/data
+    networks:
+      - backoffice-network
+    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy noeviction
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+volumes:
+  backoffice-logs:
+    name: logs-backoffice
+
+  backoffice-postgres-data:
+    name: postgres-backoffice
+
+  backoffice-redis-data:
+    name: redis-backoffice
+
+networks:
+  backoffice-network:
+    name: backoffice-network
+    driver: bridge

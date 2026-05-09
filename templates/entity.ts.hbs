@@ -1,0 +1,26 @@
+import {
+  Column,
+  CreateDateColumn,
+  DeleteDateColumn,
+  Entity,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from 'typeorm';
+import { I{{Entity}}Model } from '../models/{{entity}}.model';
+
+@Entity({ name: '{{entitiesPlural}}' })
+export class {{Entity}}Entity implements I{{Entity}}Model {
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
+
+  // TODO: add fields. Enums MUST be stored as VARCHAR.
+
+  @CreateDateColumn({ name: 'created_at' })
+  createdAt: Date;
+
+  @UpdateDateColumn({ name: 'updated_at' })
+  updatedAt: Date;
+
+  @DeleteDateColumn({ name: 'deleted_at' })
+  deletedAt?: Date | null;
+}
