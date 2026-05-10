@@ -17,7 +17,7 @@ export abstract class AbstractApplicationException extends Error {
 
   constructor(
     message: string,
-    name: string,
+    name?: string,
     statusCode?: number,
     context?: IRequestContext,
   ) {

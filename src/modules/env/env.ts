@@ -14,6 +14,21 @@ export const envSchema = z.object({
   DATABASE_PASSWORD: z.string(),
   DATABASE_NAME: z.string(),
 
+  // Redis
+  REDIS_HOST: z.string().default("localhost"),
+  REDIS_PORT: z.coerce.number().default(6379),
+  REDIS_PASSWORD: z.string().optional(),
+  REDIS_TLS: z.coerce.boolean().default(false),
+
+  // Auth JWT
+  AUTH_JWT_PRIVATE_KEY: z.string(),
+  AUTH_JWT_PUBLIC_KEY: z.string(),
+  AUTH_JWT_EXPIRES_IN: z.string().default("1d"),
+
+  // Bull Board
+  BULL_BOARD_USERNAME: z.string().default("admin"),
+  BULL_BOARD_PASSWORD: z.string(),
+
   // Pagination
   UTILITIES_PAGINATION_LIMIT: z.coerce.number().default(20),
 

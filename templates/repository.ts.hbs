@@ -19,7 +19,6 @@ export class {{EntitiesPlural}}Repository extends I{{EntitiesPlural}}Repository 
     repository: Repository<{{Entity}}Entity>,
     envService: TEnvService,
   ) {
-    const logger: ILogger = new CustomLogger({{EntitiesPlural}}Repository.name);
-    super(repository, envService, logger);
+    super(repository, envService, new CustomLogger(envService, {{EntitiesPlural}}Repository.name),);
   }
 }

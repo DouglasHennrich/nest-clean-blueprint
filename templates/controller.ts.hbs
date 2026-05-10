@@ -1,6 +1,6 @@
 import { Body, Controller, Post } from '@nestjs/common';
 import { ZodValidationPipe } from '@/@shared/pipes/zod-validation.pipe';
-import { AbstractApplicationException } from '@/@shared/errors/abstract-application-exception';
+import { AbstractApplicationException } from '@/@shared/exceptions/application.exception';
 import { ReqContext } from '@/@decorators/request-context.decorator';
 import { IRequestContext } from '@/@shared/protocols/request-context.struct';
 import { T{{Action}}{{Entity}}Service } from '../services/{{action}}-{{entity}}.service';
@@ -8,7 +8,7 @@ import { I{{Entity}}Presenter } from '../presenters/{{entity}}.presenter';
 import {
   {{action}}{{Entity}}DtoBodySchema,
   T{{Action}}{{Entity}}DtoBodySchema,
-} from '../dto/{{entity}}.dto';
+} from '../dtos/{{entity}}.dto';
 
 // Convention: full path lives in @Controller. The HTTP method decorator stays empty.
 @Controller('{{entitiesPlural}}')
@@ -25,12 +25,14 @@ export class {{Action}}{{Entity}}Controller {
     @ReqContext() context: IRequestContext,
   ) {
     const result = await this.{{action}}{{Entity}}Service.execute(dto, context);
+
     if (result.error) {
       if (result.error instanceof AbstractApplicationException) {
         result.error.context = context;
       }
       throw result.error;
     }
+    
     return this.{{entity}}Presenter.present(result.getValue()!);
   }
 }

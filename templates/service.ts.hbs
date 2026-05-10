@@ -3,9 +3,10 @@ import { AbstractService } from '@/@shared/classes/service';
 import { Result } from '@/@shared/classes/result';
 import { ILogger, CustomLogger } from '@/@shared/classes/custom-logger';
 import { IRequestContext } from '@/@shared/protocols/request-context.struct';
+import { AbstractApplicationException } from '@/@shared/exceptions/application.exception';
 import { I{{EntitiesPlural}}Repository } from '../repositories/{{entities-plural}}.repository';
 import { I{{Entity}}Model } from '../models/{{entity}}.model';
-import { T{{Action}}{{Entity}}DtoServiceSchema } from '../dto/{{entity}}.dto';
+import { T{{Action}}{{Entity}}DtoServiceSchema } from '../dtos/{{entity}}.dto';
 
 export abstract class T{{Action}}{{Entity}}Service extends AbstractService<
   T{{Action}}{{Entity}}DtoServiceSchema,
@@ -14,24 +15,53 @@ export abstract class T{{Action}}{{Entity}}Service extends AbstractService<
 
 @Injectable()
 export class {{Action}}{{Entity}}Service implements T{{Action}}{{Entity}}Service {
-  public logger: ILogger = new CustomLogger({{Action}}{{Entity}}Service.name);
-
   constructor(
     /// //////////////////////////
     //  Repositories
     /// //////////////////////////
     private {{entitiesPlural}}Repository: I{{EntitiesPlural}}Repository,
-  ) {}
+
+    /// //////////////////////////
+    //  Providers
+    /// //////////////////////////
+    public logger: ILogger,
+  ) {
+    this.logger.setContextName({{Action}}{{Entity}}Service.name);
+  }
 
   async execute(
     dto: T{{Action}}{{Entity}}DtoServiceSchema,
     context?: IRequestContext,
   ): Promise<Result<I{{Entity}}Model>> {
-    this.logger.log(`{{Action}} {{entity}}: ${JSON.stringify(dto)}`, context);
+    const validationResult = this.validateDto(dto);
+
+    if (validationResult.isFailure()) {
+      this.logger.error(
+        `Validation failed for {{action}} {{entity}}: ${validationResult.error.message}`,
+      );
+
+      return Result.fail(validationResult.error);
+    }
+
+    const validatedDto = validationResult.getValue()!;
+
+    this.logger.log(`{{Action}} {{entity}}: ${JSON.stringify(validatedDto)}`, context);
 
     // TODO: implement business logic.
     // Always return Result.success / Result.fail. NEVER throw.
 
-    return Result.fail(new Error('Not implemented'));
+    return Result.fail(new AbstractApplicationException('Not implemented'));
+  }
+
+  validateDto(
+    serviceDto: T{{Action}}{{Entity}}DtoServiceSchema,
+  ): Result<T{{Action}}{{Entity}}DtoServiceSchema> {
+    try {
+      const validatedDto =
+        {{action}}{{Entity}}DtoServiceSchema.parse(serviceDto);
+      return Result.success(validatedDto);
+    } catch (error) {
+      return Result.fail(error as Error);
+    }
   }
 }
