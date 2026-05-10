@@ -52,6 +52,7 @@ const R_PATTERNS = "docs/patterns";
 const R_CONVENTIONS = "docs/conventions";
 const R_PROVIDERS = "docs/providers";
 const R_FLOWS = "docs/flows";
+const R_SKILLS = ".github/skills";
 
 // ── GitHub helpers ─────────────────────────────────────────────────────────────
 function githubHeaders(): Record<string, string> {
@@ -442,6 +443,33 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       },
     },
     {
+      name: "list_skills",
+      description:
+        "Lists all available skill names in .github/skills/ (e.g. backend-patterns, verification-loop).",
+      inputSchema: {
+        type: "object",
+        properties: {},
+        additionalProperties: false,
+      },
+    },
+    {
+      name: "get_skill",
+      description:
+        "Returns a skill document from .github/skills/ by name (e.g. backend-patterns, verification-loop). Call list_skills to see available names.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          name: {
+            type: "string",
+            description:
+              'Skill name without extension (e.g. "backend-patterns"). Call list_skills to see all available names.',
+          },
+        },
+        required: ["name"],
+        additionalProperties: false,
+      },
+    },
+    {
       name: "validate_module_structure",
       description:
         "Validates that a module folder follows the required layout (controllers/, dto/, entities/, errors/, models/, presenters/, repositories/, services/, *.module.ts).",
@@ -591,6 +619,23 @@ server.setRequestHandler(
               {
                 type: "text",
                 text: await readContentEnriched(safePath(R_FLOWS, n, ".md")),
+              },
+            ],
+          };
+        }
+
+        case "list_skills": {
+          const names = await listContent(R_SKILLS);
+          return { content: [{ type: "text", text: names.join("\n") }] };
+        }
+
+        case "get_skill": {
+          const n = String((args as any)?.name ?? "");
+          return {
+            content: [
+              {
+                type: "text",
+                text: await readContentEnriched(safePath(R_SKILLS, n, ".md")),
               },
             ],
           };
