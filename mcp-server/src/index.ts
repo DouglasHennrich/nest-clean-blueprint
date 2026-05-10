@@ -5,6 +5,11 @@
  * Exposes the architecture blueprint, patterns, conventions, provider docs,
  * scaffolding templates and the PR checklist as MCP tools so AI agents can
  * consult always-fresh guidance from a single source of truth.
+ *
+ * Supports two modes:
+ *  - LOCAL  (default): reads from the local filesystem relative to REPO_ROOT.
+ *  - REMOTE (GitHub):  reads from raw.githubusercontent.com when GITHUB_REPO
+ *    env var is set (e.g. "username/nest-clean-blueprint").
  */
 
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
@@ -14,21 +19,161 @@ import {
   CallToolRequest,
   ListToolsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
-import { readFile, readdir, stat } from "node:fs/promises";
+import { readFile, readdir, stat, mkdir, writeFile } from "node:fs/promises";
 import { join, resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
+// ── Mode detection ─────────────────────────────────────────────────────────────
+/** GitHub repository slug, e.g. "username/nest-clean-blueprint".
+ *  When set, the server fetches ALL files from GitHub instead of the local filesystem. */
+const GITHUB_REPO = process.env.GITHUB_REPO ?? "";
+const GITHUB_BRANCH = process.env.GITHUB_BRANCH ?? "main";
+/** Optional Personal Access Token — required for private repos and avoids
+ *  GitHub unauthenticated rate limits (60 req/h → 5 000 req/h with token). */
+const GITHUB_TOKEN = process.env.GITHUB_TOKEN ?? "";
+const REMOTE_MODE = GITHUB_REPO !== "";
+/** Absolute path where synced docs are cached locally (e.g. "/my-project/.blueprint-cache").
+ *  When set together with GITHUB_REPO, enables HYBRID mode: docs are auto-synced on startup
+ *  when a newer blueprint version is available, and served from cache first. */
+const LOCAL_CACHE_DIR = process.env.LOCAL_CACHE_DIR ?? "";
+/** True when GITHUB_REPO + LOCAL_CACHE_DIR are both set. */
+const HYBRID_MODE = REMOTE_MODE && LOCAL_CACHE_DIR !== "";
+
+// ── Local paths (used only in LOCAL mode) ─────────────────────────────────────
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-
-// Repo root is two levels up from dist/ (mcp-server/dist/index.js → mcp-server/ → repo-root/)
+// mcp-server/dist/index.js → mcp-server/ → repo-root/
 const REPO_ROOT = resolve(__dirname, "..", "..");
-const DOCS_DIR = join(REPO_ROOT, "docs");
-const TEMPLATES_DIR = join(REPO_ROOT, "templates");
+
+// ── Repo-relative path constants (work in both modes) ─────────────────────────
+const R_DOCS = "docs";
+const R_TEMPLATES = "templates";
+const R_PATTERNS = "docs/patterns";
+const R_CONVENTIONS = "docs/conventions";
+const R_PROVIDERS = "docs/providers";
+const R_FLOWS = "docs/flows";
+
+// ── GitHub helpers ─────────────────────────────────────────────────────────────
+function githubHeaders(): Record<string, string> {
+  const h: Record<string, string> = {
+    "User-Agent": "nest-clean-blueprint-mcp",
+  };
+  if (GITHUB_TOKEN) h.Authorization = `Bearer ${GITHUB_TOKEN}`;
+  return h;
+}
+
+async function fetchRaw(relPath: string): Promise<string> {
+  const url = `https://raw.githubusercontent.com/${GITHUB_REPO}/${GITHUB_BRANCH}/${relPath}`;
+  const res = await fetch(url, { headers: githubHeaders() });
+  if (!res.ok)
+    throw new Error(`GitHub fetch failed (HTTP ${res.status}): ${url}`);
+  return res.text();
+}
+
+async function listGitHub(relDir: string, ext: string): Promise<string[]> {
+  const url = `https://api.github.com/repos/${GITHUB_REPO}/contents/${relDir}?ref=${GITHUB_BRANCH}`;
+  const h = { ...githubHeaders(), Accept: "application/vnd.github.v3+json" };
+  const res = await fetch(url, { headers: h });
+  if (!res.ok) return [];
+  const items = (await res.json()) as Array<{ name: string; type: string }>;
+  return items
+    .filter((i) => i.type === "file" && i.name.endsWith(ext))
+    .map((i) => i.name.slice(0, -ext.length))
+    .sort();
+}
+
+// ── Unified I/O helpers (mode-aware: LOCAL · REMOTE · HYBRID) ───────────────────
+/** Read a file by repo-relative path. In HYBRID mode serves from LOCAL_CACHE_DIR
+ *  first, falling back to live GitHub. */
+async function readContent(relPath: string): Promise<string> {
+  if (HYBRID_MODE) {
+    try {
+      return await readFile(join(LOCAL_CACHE_DIR, relPath), "utf-8");
+    } catch {
+      /* not cached yet — fall through to GitHub */
+    }
+    return fetchRaw(relPath);
+  }
+  if (REMOTE_MODE) return fetchRaw(relPath);
+  try {
+    return await readFile(join(REPO_ROOT, relPath), "utf-8");
+  } catch (err) {
+    throw new Error(
+      `File not found: ${relPath}. ${err instanceof Error ? err.message : ""}`,
+    );
+  }
+}
 
 /**
- * Safely resolve a user-supplied name into an absolute file path inside `baseDir`.
- * Throws if the resolved path escapes the base (path-traversal guard).
+ * Enriched read (HYBRID mode only): fetches fresh content from GitHub AND reads
+ * the local cache simultaneously, returning both side-by-side when they differ.
+ * Falls back to readContent in LOCAL or REMOTE mode.
+ */
+async function readContentEnriched(relPath: string): Promise<string> {
+  if (!HYBRID_MODE) return readContent(relPath);
+
+  const [liveResult, cachedResult] = await Promise.allSettled([
+    fetchRaw(relPath),
+    readFile(join(LOCAL_CACHE_DIR, relPath), "utf-8"),
+  ]);
+
+  const live = liveResult.status === "fulfilled" ? liveResult.value : null;
+  const cached =
+    cachedResult.status === "fulfilled" ? cachedResult.value : null;
+
+  if (!live && !cached) throw new Error(`Content unavailable: ${relPath}`);
+  if (!live) return cached!;
+  if (!cached || cached.trim() === live.trim()) return live; // identical — avoid duplication
+
+  return [
+    `> 🔄 **Live (GitHub — latest)**`,
+    ``,
+    live,
+    ``,
+    `---`,
+    ``,
+    `> 📂 **Pinned cache (local)**`,
+    ``,
+    cached,
+  ].join("\n");
+}
+
+/** List files in a repo-relative directory, returning names WITHOUT the extension.
+ *  Works in all modes. */
+async function listContent(relDir: string, ext = ".md"): Promise<string[]> {
+  if (REMOTE_MODE) return listGitHub(relDir, ext);
+  const absDir = join(REPO_ROOT, relDir);
+  try {
+    const entries = await readdir(absDir);
+    const files: string[] = [];
+    for (const entry of entries) {
+      const s = await stat(join(absDir, entry));
+      if (s.isFile() && entry.endsWith(ext)) {
+        files.push(entry.slice(0, -ext.length));
+      }
+    }
+    return files.sort();
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Safely build a repo-relative path from a user-supplied name.
+ * Guards against path-traversal attacks (e.g. "../../etc/passwd").
+ */
+function safePath(baseRel: string, name: string, suffix = ""): string {
+  const sanitized = name.replace(/\\/g, "/").replace(/\.\./g, "");
+  const result = `${baseRel}/${sanitized}${suffix}`;
+  if (!result.startsWith(`${baseRel}/`)) {
+    throw new Error(`Path escapes base directory: ${name}`);
+  }
+  return result;
+}
+
+/**
+ * Safely resolve a user-supplied name into an absolute path.
+ * Used by validate_module_structure (LOCAL mode only).
  */
 function safeResolve(baseDir: string, name: string, suffix = ""): string {
   const sanitized = name.replace(/\\/g, "/").replace(/\.\./g, "");
@@ -42,31 +187,82 @@ function safeResolve(baseDir: string, name: string, suffix = ""): string {
   return target;
 }
 
-async function readMarkdown(path: string): Promise<string> {
+// ── Version check & doc sync (HYBRID mode) ────────────────────────────────────
+/** Returns true when the remote semver is strictly newer than local. */
+function isNewer(remote: string, local: string): boolean {
+  const parse = (v: string): number[] =>
+    v
+      .replace(/^v/, "")
+      .split(".")
+      .map((n) => parseInt(n, 10) || 0);
+  const [rMaj, rMin, rPat] = parse(remote);
+  const [lMaj, lMin, lPat] = parse(local);
+  if (rMaj !== lMaj) return rMaj > lMaj;
+  if (rMin !== lMin) return rMin > lMin;
+  return rPat > lPat;
+}
+
+/** Fetch the blueprint version string from docs/VERSION on GitHub. */
+async function fetchRemoteVersion(): Promise<string> {
+  return (await fetchRaw(`${R_DOCS}/VERSION`)).trim();
+}
+
+/** Read the locally-cached blueprint version (returns "0.0.0" if not found). */
+async function readLocalVersion(): Promise<string> {
   try {
-    return await readFile(path, "utf-8");
-  } catch (err) {
-    throw new Error(
-      `File not found: ${path}. ${err instanceof Error ? err.message : ""}`,
+    const raw = await readFile(
+      join(LOCAL_CACHE_DIR, R_DOCS, "VERSION"),
+      "utf-8",
     );
+    return raw.trim();
+  } catch {
+    return "0.0.0";
   }
 }
 
-async function listMarkdownFiles(dir: string): Promise<string[]> {
-  try {
-    const entries = await readdir(dir);
-    const files: string[] = [];
-    for (const entry of entries) {
-      const full = join(dir, entry);
-      const s = await stat(full);
-      if (s.isFile() && entry.endsWith(".md")) {
-        files.push(entry.replace(/\.md$/, ""));
-      }
-    }
-    return files.sort();
-  } catch {
-    return [];
-  }
+/** Write a file into LOCAL_CACHE_DIR, creating parent directories as needed. */
+async function writeCached(relPath: string, content: string): Promise<void> {
+  const localPath = join(LOCAL_CACHE_DIR, relPath);
+  await mkdir(dirname(localPath), { recursive: true });
+  await writeFile(localPath, content, "utf-8");
+}
+
+/**
+ * Download ALL blueprint docs from GitHub into LOCAL_CACHE_DIR.
+ * Called automatically when the remote version is newer than local.
+ */
+async function syncDocs(newVersion: string): Promise<void> {
+  const sections: Array<{ dir: string; ext: string }> = [
+    { dir: R_PATTERNS, ext: ".md" },
+    { dir: R_CONVENTIONS, ext: ".md" },
+    { dir: R_PROVIDERS, ext: ".md" },
+    { dir: R_FLOWS, ext: ".md" },
+    { dir: R_TEMPLATES, ext: ".ts.hbs" },
+  ];
+  const topDocs = [
+    `${R_DOCS}/ARCHITECTURE-BLUEPRINT.md`,
+    `${R_DOCS}/checklist-pr.md`,
+  ];
+
+  await Promise.all([
+    ...topDocs.map(async (relPath) => {
+      const content = await fetchRaw(relPath);
+      await writeCached(relPath, content);
+    }),
+    ...sections.map(async ({ dir, ext }) => {
+      const names = await listGitHub(dir, ext);
+      await Promise.all(
+        names.map(async (name) => {
+          const relPath = `${dir}/${name}${ext}`;
+          const content = await fetchRaw(relPath);
+          await writeCached(relPath, content);
+        }),
+      );
+    }),
+  ]);
+
+  // Write the new version stamp last so a partial sync never looks complete.
+  await writeCached(`${R_DOCS}/VERSION`, newVersion);
 }
 
 const server = new Server(
@@ -199,6 +395,33 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       },
     },
     {
+      name: "get_flow",
+      description:
+        "Returns the full documentation for one of the 8 infrastructure flows (auth-jwt, authorization-casl, bullmq-queues, cache-redis, logger, rate-limit, cronjobs, health-check). Call list_flows to see available names.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          name: {
+            type: "string",
+            description:
+              'Flow name without extension (e.g. "auth-jwt"). Call list_flows to see all available names.',
+          },
+        },
+        required: ["name"],
+        additionalProperties: false,
+      },
+    },
+    {
+      name: "list_flows",
+      description:
+        "Lists all available infrastructure flow doc names (auth-jwt, authorization-casl, bullmq-queues, cache-redis, logger, rate-limit, cronjobs, health-check).",
+      inputSchema: {
+        type: "object",
+        properties: {},
+        additionalProperties: false,
+      },
+    },
+    {
       name: "get_email_template_example",
       description:
         "Returns the EJS welcome email template plus its partials (header.ejs, footer.ejs) demonstrating the include pattern.",
@@ -246,57 +469,69 @@ server.setRequestHandler(
     try {
       switch (name) {
         case "get_blueprint": {
-          const text = await readMarkdown(
-            join(DOCS_DIR, "ARCHITECTURE-BLUEPRINT.md"),
+          const text = await readContentEnriched(
+            `${R_DOCS}/ARCHITECTURE-BLUEPRINT.md`,
           );
           return { content: [{ type: "text", text }] };
         }
 
         case "list_patterns": {
-          const names = await listMarkdownFiles(join(DOCS_DIR, "patterns"));
+          const names = await listContent(R_PATTERNS);
           return { content: [{ type: "text", text: names.join("\n") }] };
         }
 
         case "get_pattern": {
           const n = String((args as any)?.name ?? "");
-          const path = safeResolve(join(DOCS_DIR, "patterns"), n, ".md");
           return {
-            content: [{ type: "text", text: await readMarkdown(path) }],
+            content: [
+              {
+                type: "text",
+                text: await readContentEnriched(safePath(R_PATTERNS, n, ".md")),
+              },
+            ],
           };
         }
 
         case "list_conventions": {
-          const names = await listMarkdownFiles(join(DOCS_DIR, "conventions"));
+          const names = await listContent(R_CONVENTIONS);
           return { content: [{ type: "text", text: names.join("\n") }] };
         }
 
         case "get_convention": {
           const n = String((args as any)?.name ?? "");
-          const path = safeResolve(join(DOCS_DIR, "conventions"), n, ".md");
           return {
-            content: [{ type: "text", text: await readMarkdown(path) }],
+            content: [
+              {
+                type: "text",
+                text: await readContentEnriched(
+                  safePath(R_CONVENTIONS, n, ".md"),
+                ),
+              },
+            ],
           };
         }
 
         case "list_providers": {
-          const names = await listMarkdownFiles(join(DOCS_DIR, "providers"));
+          const names = await listContent(R_PROVIDERS);
           return { content: [{ type: "text", text: names.join("\n") }] };
         }
 
         case "get_provider_docs": {
           const n = String((args as any)?.name ?? "");
-          const path = safeResolve(join(DOCS_DIR, "providers"), n, ".md");
           return {
-            content: [{ type: "text", text: await readMarkdown(path) }],
+            content: [
+              {
+                type: "text",
+                text: await readContentEnriched(
+                  safePath(R_PROVIDERS, n, ".md"),
+                ),
+              },
+            ],
           };
         }
 
         case "list_templates": {
-          const entries = await readdir(TEMPLATES_DIR);
-          const names = entries
-            .filter((e) => e.endsWith(".ts.hbs"))
-            .map((e) => e.replace(/\.ts\.hbs$/, ""))
-            .sort();
+          const names = await listContent(R_TEMPLATES, ".ts.hbs");
           return { content: [{ type: "text", text: names.join("\n") }] };
         }
 
@@ -315,28 +550,23 @@ server.setRequestHandler(
           if (!allowed.includes(layer)) {
             throw new Error(`Unknown layer: ${layer}`);
           }
-          const path = join(TEMPLATES_DIR, `${layer}.ts.hbs`);
           return {
-            content: [{ type: "text", text: await readMarkdown(path) }],
+            content: [
+              {
+                type: "text",
+                text: await readContent(`${R_TEMPLATES}/${layer}.ts.hbs`),
+              },
+            ],
           };
         }
 
         case "get_email_template_example": {
-          const base = join(
-            REPO_ROOT,
-            "src",
-            "@shared",
-            "providers",
-            "mail-provider",
-            "templates",
-          );
-          const welcome = await readMarkdown(join(base, "welcome.ejs"));
-          const header = await readMarkdown(
-            join(base, "partials", "header.ejs"),
-          );
-          const footer = await readMarkdown(
-            join(base, "partials", "footer.ejs"),
-          );
+          const base = "src/@shared/providers/mail-provider/templates";
+          const [welcome, header, footer] = await Promise.all([
+            readContent(`${base}/welcome.ejs`),
+            readContent(`${base}/partials/header.ejs`),
+            readContent(`${base}/partials/footer.ejs`),
+          ]);
           const text =
             `# welcome.ejs\n\n\`\`\`ejs\n${welcome}\n\`\`\`\n\n` +
             `# partials/header.ejs\n\n\`\`\`ejs\n${header}\n\`\`\`\n\n` +
@@ -345,11 +575,38 @@ server.setRequestHandler(
         }
 
         case "get_checklist": {
-          const text = await readMarkdown(join(DOCS_DIR, "checklist-pr.md"));
+          const text = await readContentEnriched(`${R_DOCS}/checklist-pr.md`);
           return { content: [{ type: "text", text }] };
         }
 
+        case "list_flows": {
+          const names = await listContent(R_FLOWS);
+          return { content: [{ type: "text", text: names.join("\n") }] };
+        }
+
+        case "get_flow": {
+          const n = String((args as any)?.name ?? "");
+          return {
+            content: [
+              {
+                type: "text",
+                text: await readContentEnriched(safePath(R_FLOWS, n, ".md")),
+              },
+            ],
+          };
+        }
+
         case "validate_module_structure": {
+          if (REMOTE_MODE) {
+            return {
+              content: [
+                {
+                  type: "text",
+                  text: "validate_module_structure is only available in LOCAL mode (requires filesystem access).",
+                },
+              ],
+            };
+          }
           const requested = String((args as any)?.path ?? "");
           const target = requested.startsWith("/")
             ? requested
@@ -415,6 +672,29 @@ server.setRequestHandler(
     }
   },
 );
+
+// ── HYBRID mode: auto-sync if remote is newer ─────────────────────────────────
+if (HYBRID_MODE) {
+  try {
+    const remoteVer = await fetchRemoteVersion();
+    const localVer = await readLocalVersion();
+    if (isNewer(remoteVer, localVer)) {
+      console.error(
+        `[nest-clean-blueprint MCP] v${remoteVer} available (local: v${localVer}) — syncing docs…`,
+      );
+      await syncDocs(remoteVer);
+      console.error(`[nest-clean-blueprint MCP] Sync complete.`);
+    } else {
+      console.error(
+        `[nest-clean-blueprint MCP] Cache up to date (v${localVer}).`,
+      );
+    }
+  } catch (err) {
+    console.error(
+      `[nest-clean-blueprint MCP] Version check failed — using cached content. ${err}`,
+    );
+  }
+}
 
 const transport = new StdioServerTransport();
 await server.connect(transport);

@@ -5,81 +5,81 @@
 
 ---
 
-## 🏗️ O que é
+## 🏗️ What is it
 
-Este repositório **não é um framework**. É um **bootstrap** — um esqueleto de projeto NestJS contendo:
+This repository is **not a framework**. It is a **bootstrap** — a NestJS project skeleton containing:
 
-- Classes base (`Result`, `AbstractRepository`, `AbstractService`, `AbstractPresenter`, `AbstractEventListener`, `ILogger`, `AsyncContext`).
-- Infra compartilhada (middlewares, pipes, decorators, exceptions).
-- 3 providers prontos (AWS SES + EJS, Node `crypto`, AWS S3).
-- 1 módulo de exemplo (`orders`) demonstrando **todos** os patterns end-to-end.
-- Templates `.hbs` para scaffolding rápido de novos módulos.
-- Documentação completa em `docs/`.
-- Servidor MCP em `mcp-server/` que expõe tudo isso como tools para agentes de IA.
+- Base classes (`Result`, `AbstractRepository`, `AbstractService`, `AbstractPresenter`, `AbstractEventListener`, `ILogger`, `AsyncContext`).
+- Shared infrastructure (middlewares, pipes, decorators, exceptions).
+- 3 ready-to-use providers (AWS SES + EJS, Node `crypto`, AWS S3).
+- 1 example module (`orders`) demonstrating **all** patterns end-to-end.
+- `.hbs` templates for fast scaffolding of new modules.
+- Full documentation in `docs/`.
+- MCP server in `mcp-server/` exposing everything as tools for AI agents.
 
-A intenção é que novos projetos **clonem este repositório** ou **consultem-no via MCP** ao invés de copiar manualmente código de projetos antigos.
+The intent is for new projects to **clone this repository** or **consume it via MCP** instead of manually copying code from older projects.
 
 ---
 
-## 🚀 Como usar
+## 🚀 How to use
 
-### Opção A — clonar como ponto de partida
+### Option A — clone as a starting point
 
 ```bash
 git clone https://github.com/<owner>/nest-clean-blueprint.git my-new-api
 cd my-new-api
 rm -rf .git && git init
 pnpm install
-cp .env.example .env   # ajuste credenciais
+cp .env.example .env   # fill in your credentials
 pnpm start:dev
 ```
 
-Em seguida:
+Then:
 
-1. Renomeie/remova o módulo de exemplo `src/modules/_example_orders/`.
-2. Crie seus próprios módulos consultando `docs/conventions/module-structure.md`.
-3. Use os templates em `templates/` para scaffolding (manualmente ou via plop/hygen).
+1. Rename/remove the example module `src/modules/_example_orders/`.
+2. Create your own modules following `docs/conventions/module-structure.md`.
+3. Use the templates in `templates/` for scaffolding (manually or via plop/hygen).
 
-### Opção B — consultar via MCP (recomendado para times com IA)
+### Option B — consume via MCP (recommended for AI-powered teams)
 
-Mantenha este repositório como **fonte da verdade**. Cada projeto novo apenas registra o servidor MCP no editor (Copilot / Claude / Cursor) e consulta as diretrizes em tempo real.
+Keep this repository as the **single source of truth**. Each new project simply registers the MCP server in the editor (Copilot / Claude / Cursor) and queries the guidelines in real time.
 
-Veja a seção [🔌 Integração MCP](#-integração-mcp) abaixo.
+See the [🔌 MCP Integration](#-mcp-integration) section below.
 
 ---
 
-## 🤖 Squad como Orquestrador Principal de AI Agents
+## 🤖 Squad as the Main AI Agent Orchestrator
 
-Este blueprint foi pensado para times que usam **múltiplos agentes de IA** trabalhando em paralelo. Recomendamos o [**Squad**](https://github.com/bradygaster/squad-cli) como orquestrador padrão.
+This blueprint is designed for teams that use **multiple AI agents** working in parallel. We recommend [**Squad**](https://github.com/bradygaster/squad-cli) as the default orchestrator.
 
-### Por que Squad
+### Why Squad
 
-- Coordena agentes em paralelo (background) com fila de trabalho.
-- Padrão de "memória" por agente (`charter.md` + `history.md`).
-- Decisões arquiteturais centralizadas (`decisions.md`).
-- Skills reutilizáveis em `.copilot/skills/` e `.squad/skills/`.
-- Integração nativa com GitHub Issues + PRs.
+- Coordinates agents in parallel (background) with a work queue.
+- Per-agent "memory" pattern (`charter.md` + `history.md`).
+- Centralized architectural decisions (`decisions.md`).
+- Reusable skills in `.copilot/skills/` and `.squad/skills/`.
+- Native integration with GitHub Issues + PRs.
 
-### Setup recomendado
+### Recommended setup
 
-Em qualquer projeto que use este blueprint:
+In any project that uses this blueprint:
 
 ```bash
 npx @bradygaster/squad-cli init
 ```
 
-Quando o Squad perguntar pela composição da equipe, sugerimos os seguintes papéis:
+When Squad asks for team composition, we suggest the following roles:
 
-| Papel | Responsabilidade |
+| Role | Responsibility |
 |---|---|
-| 🏗️ **Lead** | Triagem de issues, design arquitetural, code review, garantir conformidade com este blueprint |
-| 🔧 **Backend Dev** | Implementar services, controllers, repositories seguindo Result + ZodValidationPipe + Presenter |
-| 🧪 **Tester** | Escrever unit + E2E, validar erros por `instanceOf`, manter cobertura |
-| 📋 **Scribe** | (sempre presente) Memória, decisões, logs de sessão |
+| 🏗️ **Lead** | Issue triage, architectural design, code review, blueprint compliance |
+| 🔧 **Backend Dev** | Implement services, controllers, repositories following Result + ZodValidationPipe + Presenter |
+| 🧪 **Tester** | Write unit + E2E tests, validate errors via `instanceOf`, maintain coverage |
+| 📋 **Scribe** | (always present) Memory, decisions, session logs |
 
-### Skill recomendada
+### Recommended skill
 
-Adicione uma skill `nest-clean-blueprint` em `.copilot/skills/` apontando para este MCP server. Assim **todo agente** consulta os patterns automaticamente:
+Add a `nest-clean-blueprint` skill in `.copilot/skills/` pointing to this MCP server. That way **every agent** consults the patterns automatically:
 
 ```markdown
 ---
@@ -87,18 +87,18 @@ name: nest-clean-blueprint
 description: REQUIRED for any NestJS backend code. ALWAYS load before creating a service, writing a controller, adding a repository, building a module. Consult MCP `nest-clean-blueprint` for the latest patterns.
 ---
 
-Antes de implementar qualquer código:
-1. `get_blueprint` — leia o blueprint completo.
-2. `get_pattern <nome>` — consulte o pattern relevante.
-3. `get_template <layer>` — use o template ao criar arquivos.
-4. `get_checklist` antes de abrir o PR.
+Before implementing any code:
+1. `get_blueprint` — read the full blueprint.
+2. `get_pattern <name>` — consult the relevant pattern.
+3. `get_template <layer>` — use the template when creating files.
+4. `get_checklist` before opening a PR.
 ```
 
 ---
 
-## 🔌 Integração MCP
+## 🔌 MCP Integration
 
-O servidor MCP em `mcp-server/` expõe os documentos e templates deste repositório como **tools** consumíveis por qualquer cliente compatível (GitHub Copilot, Claude Desktop/Code, Cursor, Continue, etc).
+The MCP server in `mcp-server/` exposes this repository's documents and templates as **tools** consumable by any compatible client (GitHub Copilot, Claude Desktop/Code, Cursor, Continue, etc).
 
 ### Build
 
@@ -108,12 +108,15 @@ pnpm install
 pnpm build
 ```
 
-### Configuração (exemplo `.mcp.json`)
+### Mode A — Local (reads from this clone)
+
+Point the MCP at the local `dist/index.js`. Ideal for development — changes to docs are reflected immediately after a build.
 
 ```json
 {
   "mcpServers": {
     "nest-clean-blueprint": {
+      "type": "stdio",
       "command": "node",
       "args": ["/abs/path/to/nest-clean-blueprint/mcp-server/dist/index.js"]
     }
@@ -121,30 +124,166 @@ pnpm build
 }
 ```
 
-### Tools disponíveis
+### Mode B — Remote (reads directly from GitHub)
 
-| Tool | O que retorna |
+Set the `GITHUB_REPO` env var. The server fetches every file from `raw.githubusercontent.com` at request time — no local clone needed.
+
+```json
+{
+  "mcpServers": {
+    "nest-clean-blueprint": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["/abs/path/to/nest-clean-blueprint/mcp-server/dist/index.js"],
+      "env": {
+        "GITHUB_REPO":   "your-username/nest-clean-blueprint",
+        "GITHUB_BRANCH": "main",
+        "GITHUB_TOKEN":  "ghp_..."
+      }
+    }
+  }
+}
+```
+
+### Mode C — Hybrid (recommended for consumer projects)
+
+Set both `GITHUB_REPO` **and** `LOCAL_CACHE_DIR`. On startup the server checks `docs/VERSION` from GitHub; if it is newer than the locally-cached version it downloads all docs into `LOCAL_CACHE_DIR` automatically. Normal tool calls are served from the fast local cache. When a specific doc is requested explicitly (e.g. `get_flow`), the response includes both the cached version and a fresh live copy from GitHub — so you always get the most comprehensive content.
+
+```json
+{
+  "mcpServers": {
+    "nest-clean-blueprint": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["/abs/path/to/nest-clean-blueprint/mcp-server/dist/index.js"],
+      "env": {
+        "GITHUB_REPO":     "your-username/nest-clean-blueprint",
+        "GITHUB_BRANCH":   "main",
+        "GITHUB_TOKEN":    "ghp_...",
+        "LOCAL_CACHE_DIR": "/abs/path/to/consumer-project/.blueprint-cache"
+      }
+    }
+  }
+}
+```
+
+**How it works:**
+
+1. **Startup**: fetches `docs/VERSION` from GitHub, compares with `LOCAL_CACHE_DIR/docs/VERSION`.
+2. **If remote is newer**: downloads every doc/template into `LOCAL_CACHE_DIR` (all in parallel), then writes the new `VERSION` stamp last (so a partial sync never looks complete).
+3. **Normal calls** (`list_*`, `get_*` serving cached data): served from `LOCAL_CACHE_DIR` — fast, offline-capable.
+4. **Explicit doc requests** (`get_flow`, `get_pattern`, `get_convention`, `get_blueprint`, etc.): returns the local cache **and** a fresh GitHub copy side-by-side when they differ.
+
+| Env var | Required | Description |
+|---|---|---|
+| `GITHUB_REPO` | ✅ | Repository slug — `owner/repo` |
+| `GITHUB_BRANCH` | no (default: `main`) | Branch, tag, or commit SHA to read from |
+| `GITHUB_TOKEN` | recommended | Personal Access Token. Without it GitHub limits unauthenticated requests to 60/h |
+| `LOCAL_CACHE_DIR` | (enables HYBRID) | Absolute path where docs are cached locally |
+
+> **Private repos** require `GITHUB_TOKEN` with `repo` scope.
+> **Public repos** work without a token, but adding one avoids rate limits.
+
+> ⚠️ `validate_module_structure` is only available in LOCAL mode (it needs filesystem access to the module you're validating).
+
+### Available tools
+
+| Tool | What it returns |
 |---|---|
-| `get_blueprint` | `docs/ARCHITECTURE-BLUEPRINT.md` completo |
+| `get_blueprint` | Full `docs/ARCHITECTURE-BLUEPRINT.md` |
 | `list_patterns` / `get_pattern <name>` | Patterns: result-pattern, dependency-injection, pagination, async-context, event-driven |
 | `list_conventions` / `get_convention <name>` | naming, module-structure, testing |
 | `list_providers` / `get_provider_docs <name>` | mail-provider, encrypt-decrypt-provider, upload-provider |
 | `list_templates` / `get_template <layer>` | Scaffolding `.hbs`: service, controller, repository, presenter, entity, dto, exception, module |
+| `list_flows` / `get_flow <name>` | Infrastructure flows: auth-jwt, authorization-casl, bullmq-queues, cache-redis, logger, rate-limit, cronjobs, health-check |
 | `get_email_template_example` | Welcome EJS + partials (header/footer) |
-| `get_checklist` | Checklist obrigatório de PR |
-| `validate_module_structure <path>` | Verifica se um módulo segue o layout obrigatório |
+| `get_checklist` | Mandatory PR checklist |
+| `validate_module_structure <path>` | Checks whether a module follows the required layout (LOCAL mode only) |
 
-### Pin de versão
+### ➕ Adding new MCP tools
 
-Em produção, faça checkout de uma **tag** (ex: `v1.0.0`) e aponte o MCP para esse caminho. Atualizações nas diretrizes só chegam após o time fazer um `pull` consciente.
+The MCP server is designed so adding a new tool is always the same 3-step recipe:
+
+#### Step 1 — Create the doc / file
+
+Drop a Markdown file in the appropriate `docs/` subdirectory:
+
+| Category | Directory | Tool pair |
+|---|---|---|
+| Patterns | `docs/patterns/my-pattern.md` | `get_pattern` / `list_patterns` |
+| Conventions | `docs/conventions/my-convention.md` | `get_convention` / `list_conventions` |
+| Providers | `docs/providers/my-provider.md` | `get_provider_docs` / `list_providers` |
+| Flows | `docs/flows/my-flow.md` | `get_flow` / `list_flows` |
+
+**No code changes needed** — `listContent` and `readContent` discover files automatically. Just create the file, rebuild, and the new name appears in `list_*` output.
+
+#### Step 2 — Add a completely new tool category
+
+Only needed when creating a new _type_ of tool (not just a new doc inside an existing category). Edit `mcp-server/src/index.ts`:
+
+**2a. Add the relative path constant** (top of the file, alongside `R_FLOWS`, `R_PATTERNS`, etc.):
+
+```typescript
+const R_MY_CATEGORY = "docs/my-category";
+```
+
+**2b. Register the tool definitions** (inside `ListToolsRequestSchema` handler):
+
+```typescript
+{
+  name: "list_my_category",
+  description: "Lists all available my-category doc names.",
+  inputSchema: { type: "object", properties: {}, additionalProperties: false },
+},
+{
+  name: "get_my_category",
+  description: "Returns a specific my-category doc.",
+  inputSchema: {
+    type: "object",
+    properties: {
+      name: { type: "string", description: "Name without extension. Call list_my_category first." },
+    },
+    required: ["name"],
+    additionalProperties: false,
+  },
+},
+```
+
+**2c. Add the switch cases** (inside `CallToolRequestSchema` handler):
+
+```typescript
+case "list_my_category": {
+  const names = await listContent(R_MY_CATEGORY);
+  return { content: [{ type: "text", text: names.join("\n") }] };
+}
+
+case "get_my_category": {
+  const n = String((args as any)?.name ?? "");
+  return {
+    content: [{ type: "text", text: await readContent(safePath(R_MY_CATEGORY, n, ".md")) }],
+  };
+}
+```
+
+#### Step 3 — Build
+
+```bash
+cd mcp-server && pnpm build
+```
+
+Reload the MCP client (VS Code: `Cmd+Shift+P` → "Reload Window") — the new tools are immediately available.
+
+### Version pinning
+
+In production, check out a specific **tag** (e.g. `v1.0.0`) and point the MCP at that path. In remote mode, set `GITHUB_BRANCH` to the tag (`"v1.0.0"`). Guideline updates only land after the team consciously bumps the tag.
 
 ---
 
-## 📐 Patterns documentados
+## 📐 Documented patterns
 
-Documentação completa em [`docs/`](./docs/):
+Full documentation in [`docs/`](./docs/):
 
-- [📘 ARCHITECTURE-BLUEPRINT.md](./docs/ARCHITECTURE-BLUEPRINT.md) — visão geral
+- [📘 ARCHITECTURE-BLUEPRINT.md](./docs/ARCHITECTURE-BLUEPRINT.md) — overview
 - Patterns:
   - [Result pattern](./docs/patterns/result-pattern.md)
   - [Dependency Injection via abstract tokens](./docs/patterns/dependency-injection.md)
@@ -159,103 +298,104 @@ Documentação completa em [`docs/`](./docs/):
   - [Mail (AWS SES + EJS + partials)](./docs/providers/mail-provider.md)
   - [Encrypt/Decrypt (Node crypto)](./docs/providers/encrypt-decrypt-provider.md)
   - [Upload (AWS S3)](./docs/providers/upload-provider.md)
-- [✅ Checklist obrigatório de PR](./docs/checklist-pr.md)
+- [✅ Mandatory PR checklist](./docs/checklist-pr.md)
 
 ---
 
-## 🧱 Classes base disponíveis
+## 🧱 Available base classes
 
-Em [`src/@shared/`](./src/@shared/):
+In [`src/@shared/`](./src/@shared/):
 
-| Classe / Token | Arquivo | Função |
+| Class / Token | File | Purpose |
 |---|---|---|
-| `Result<T>` | `classes/result.ts` | Container de sucesso/erro retornado por todo service |
-| `AbstractRepository<E, M>` | `classes/repository.ts` | CRUD + paginação sobre TypeORM |
-| `AbstractService<Dto, R>` | `classes/service.ts` | Contrato `execute(dto, context?)` |
+| `Result<T>` | `classes/result.ts` | Success/error container returned by every service |
+| `AbstractRepository<E, M>` | `classes/repository.ts` | CRUD + pagination over TypeORM |
+| `AbstractService<Dto, R>` | `classes/service.ts` | `execute(dto, context?)` contract |
 | `AbstractPresenter<M, R>` | `classes/presenter.ts` | `present` / `presentMany` / `presentWithoutRelations` |
-| `AbstractEventListener<Dto>` | `classes/event-listener.ts` | Contrato `handle(event)` para `@OnEvent` |
-| `ILogger` / `CustomLogger` | `classes/custom-logger.ts` | Log estruturado com correlation ID |
-| `AsyncContext` | `classes/async-context.ts` | AsyncLocalStorage para requestId/userId/timezone |
-| `AbstractApplicationException` | `errors/abstract-application-exception.ts` | Base de toda exception customizada |
-| `ZodValidationPipe` | `pipes/zod-validation.pipe.ts` | Pipe de validação inline em `@Body/@Query/@Param` |
-| `RequestIdMiddleware` | `middlewares/request-id.middleware.ts` | Semeia correlation ID por request |
-| `@ReqContext()` | `@decorators/request-context.decorator.ts` | Constrói `IRequestContext` no controller |
-| `@User()` | `@decorators/current-user.decorator.ts` | Extrai usuário autenticado |
+| `AbstractEventListener<Dto>` | `classes/event-listener.ts` | `handle(event)` contract for `@OnEvent` |
+| `ILogger` / `CustomLogger` | `classes/custom-logger.ts` | Structured logging with correlation ID |
+| `AsyncContext` | `classes/async-context.ts` | AsyncLocalStorage for requestId/userId/timezone |
+| `AbstractApplicationException` | `errors/abstract-application-exception.ts` | Base for every custom exception |
+| `ZodValidationPipe` | `pipes/zod-validation.pipe.ts` | Inline validation pipe for `@Body/@Query/@Param` |
+| `RequestIdMiddleware` | `middlewares/request-id.middleware.ts` | Seeds correlation ID per request |
+| `@ReqContext()` | `@decorators/request-context.decorator.ts` | Builds `IRequestContext` in the controller |
+| `@User()` | `@decorators/current-user.decorator.ts` | Extracts the authenticated user |
 
 ---
 
-## 📦 Providers compartilhados
+## 📦 Shared providers
 
-Em [`src/@shared/providers/`](./src/@shared/providers/):
+In [`src/@shared/providers/`](./src/@shared/providers/):
 
-- **mail-provider** — AWS SES com renderização EJS e suporte a partials (`<%- include('partials/header') %>`).
-- **encrypt-decrypt-provider** — Node `crypto` configurável (algoritmo + key + IV via env).
-- **upload-provider** — AWS S3 com URLs pré-assinadas; `storageId` (`<bucket>/<key>`) round-trip.
+- **mail-provider** — AWS SES with EJS rendering and partial support (`<%- include('partials/header') %>`).
+- **encrypt-decrypt-provider** — Configurable Node `crypto` (algorithm + key + IV via env).
+- **upload-provider** — AWS S3 with pre-signed URLs; `storageId` (`<bucket>/<key>`) round-trip.
 
-Cada provider expõe um token abstrato (`TMailProvider`, `TEncryptDecryptProvider`, `TUploadProvider`) — basta `imports: [<X>ProviderModule]` e injetar.
+Each provider exposes an abstract token (`TMailProvider`, `TEncryptDecryptProvider`, `TUploadProvider`) — just add `imports: [<X>ProviderModule]` and inject.
 
 ---
 
-## 🛠️ Templates de scaffolding
+## 🛠️ Scaffolding templates
 
-Em [`templates/`](./templates/) (Handlebars `.hbs`):
+In [`templates/`](./templates/) (Handlebars `.hbs`):
 
-| Template | Para criar |
+| Template | Creates |
 |---|---|
-| `service.ts.hbs` | Service com `T...Service` + `execute` retornando `Result<T>` |
-| `controller.ts.hbs` | Controller com path completo + `ZodValidationPipe` inline + presenter |
-| `repository.ts.hbs` | Repository extendendo `AbstractRepository` |
-| `presenter.ts.hbs` | Presenter com `present` / `presentMany` |
-| `entity.ts.hbs` | Entity TypeORM com colunas snake_case + soft delete |
-| `dto.ts.hbs` | Schema Zod + type alias |
-| `exception.ts.hbs` | Exception extendendo `AbstractApplicationException` |
-| `module.ts.hbs` | Module com `useClass` para todos os tokens |
+| `service.ts.hbs` | Service with `T...Service` + `execute` returning `Result<T>` |
+| `controller.ts.hbs` | Controller with full path + inline `ZodValidationPipe` + presenter |
+| `repository.ts.hbs` | Repository extending `AbstractRepository` |
+| `presenter.ts.hbs` | Presenter with `present` / `presentMany` |
+| `entity.ts.hbs` | TypeORM entity with snake_case columns + soft delete |
+| `dto.ts.hbs` | Zod schema + type alias |
+| `exception.ts.hbs` | Exception extending `AbstractApplicationException` |
+| `module.ts.hbs` | Module with `useClass` for all tokens |
 
 Placeholders: `{{Name}}`, `{{name}}`, `{{Entity}}`, `{{entity}}`, `{{EntitiesPlural}}`, `{{entitiesPlural}}`, `{{entities-plural}}`, `{{Action}}`, `{{action}}`.
 
 ---
 
-## ✅ Checklist obrigatório de PR
+## ✅ Mandatory PR checklist
 
-Veja [`docs/checklist-pr.md`](./docs/checklist-pr.md). Reviewers devem rejeitar PRs que falhem qualquer item.
+See [`docs/checklist-pr.md`](./docs/checklist-pr.md). Reviewers must reject PRs that fail any item.
 
-Resumo:
+Summary:
 
-- Services retornam `Result<T>`, **nunca** lançam exceptions
-- Apenas controllers lançam (e anexam `context` antes)
-- Toda entrada validada com `ZodValidationPipe` inline
-- Path completo em `@Controller`, decorators HTTP vazios
-- List services retornam `IPagination<T>` e injetam `TEnvService`
-- Migrations criadas manualmente (`migration:create`, **nunca** `:generate`)
-- Erros testados via `toBeInstanceOf`, nunca por mensagem
-- `pnpm check && pnpm lint && pnpm test:unit` passam
-
----
-
-## 🏷️ Versionamento
-
-Este repositório segue **SemVer**. Cada release ganha uma tag git (`v1.0.0`, `v1.1.0`, ...).
-
-Quando consumir via MCP em projetos críticos:
-
-1. Faça checkout de uma tag específica.
-2. Aponte o MCP para esse caminho.
-3. Atualize só após revisar o `CHANGELOG.md`.
+- Services return `Result<T>`, **never** throw exceptions
+- Only controllers throw (and attach `context` first)
+- All input validated with inline `ZodValidationPipe`
+- Full path in `@Controller`, empty HTTP decorators
+- List services return `IPagination<T>` and inject `TEnvService`
+- Migrations created manually (`migration:create`, **never** `:generate`)
+- Errors tested via `toBeInstanceOf`, never by message
+- `pnpm check && pnpm lint && pnpm test:unit` pass
 
 ---
 
-## 🤝 Contribuindo
+## 🏷️ Versioning
 
-1. Abra uma issue descrevendo a mudança proposta no pattern / convention / provider.
-2. Mudanças que quebram patterns existentes exigem **discussão prévia** + entrada em `CHANGELOG.md` na seção `BREAKING CHANGES`.
-3. Toda nova diretriz precisa estar refletida em **três lugares**:
-   - Documento em `docs/`
-   - Exemplo no módulo `_example_orders/` (quando aplicável)
-   - Tool no servidor MCP (quando for nova categoria)
-4. Rode o checklist de PR antes de marcar como ready for review.
+This repository follows **SemVer**. Each release gets a git tag (`v1.0.0`, `v1.1.0`, ...).
+
+When consuming via MCP in critical projects:
+
+1. Check out a specific tag.
+2. Point the MCP at that path.
+3. Only update after reviewing `CHANGELOG.md`.
 
 ---
 
-## 📄 Licença
+## 🤝 Contributing
 
-MIT — veja [LICENSE](./LICENSE).
+1. Open an issue describing the proposed change to a pattern / convention / provider.
+2. Breaking changes to existing patterns require **prior discussion** + an entry in `CHANGELOG.md` under `BREAKING CHANGES`.
+3. Every new guideline must be reflected in **three places**:
+   - Document in `docs/`
+   - Example in the `_example_orders/` module (when applicable)
+   - Tool in the MCP server (when it is a new category)
+4. Run the PR checklist before marking as ready for review.
+
+---
+
+## 📄 License
+
+MIT — see [LICENSE](./LICENSE).
+
