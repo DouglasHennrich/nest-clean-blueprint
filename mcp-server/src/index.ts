@@ -52,7 +52,7 @@ const R_PATTERNS = "docs/patterns";
 const R_CONVENTIONS = "docs/conventions";
 const R_PROVIDERS = "docs/providers";
 const R_FLOWS = "docs/flows";
-const R_SKILLS = ".github/skills";
+const R_SKILLS = "skills";
 
 // ── GitHub helpers ─────────────────────────────────────────────────────────────
 function githubHeaders(): Record<string, string> {
@@ -154,6 +154,45 @@ async function listContent(relDir: string, ext = ".md"): Promise<string[]> {
       }
     }
     return files.sort();
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * List skill names from a skills directory where each skill lives in its own
+ * subdirectory as `<name>/SKILL.md`. Returns subdirectory names sorted.
+ */
+async function listSkillNames(relDir: string): Promise<string[]> {
+  if (REMOTE_MODE) {
+    // GitHub API: list subdirs that contain a SKILL.md
+    const url = `https://api.github.com/repos/${GITHUB_REPO}/contents/${relDir}?ref=${GITHUB_BRANCH}`;
+    const h = { ...githubHeaders(), Accept: "application/vnd.github.v3+json" };
+    const res = await fetch(url, { headers: h });
+    if (!res.ok) return [];
+    const items = (await res.json()) as Array<{ name: string; type: string }>;
+    return items
+      .filter((i) => i.type === "dir")
+      .map((i) => i.name)
+      .sort();
+  }
+  const absDir = join(REPO_ROOT, relDir);
+  try {
+    const entries = await readdir(absDir);
+    const names: string[] = [];
+    for (const entry of entries) {
+      const s = await stat(join(absDir, entry));
+      if (s.isDirectory()) {
+        // Only include if a SKILL.md exists inside
+        try {
+          await stat(join(absDir, entry, "SKILL.md"));
+          names.push(entry);
+        } catch {
+          /* no SKILL.md — skip */
+        }
+      }
+    }
+    return names.sort();
   } catch {
     return [];
   }
@@ -267,7 +306,7 @@ async function syncDocs(newVersion: string): Promise<void> {
 }
 
 const server = new Server(
-  { name: "nest-clean-blueprint", version: "0.1.0" },
+  { name: "nest-clean-blueprint", version: "0.2.0" },
   { capabilities: { tools: {} } },
 );
 
@@ -455,7 +494,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
     {
       name: "get_skill",
       description:
-        "Returns a skill document from .github/skills/ by name (e.g. backend-patterns, verification-loop). Call list_skills to see available names.",
+        "Returns a skill document from skills/ by name (e.g. backend-patterns, verification-loop). Call list_skills to see available names.",
       inputSchema: {
         type: "object",
         properties: {
@@ -466,6 +505,28 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
           },
         },
         required: ["name"],
+        additionalProperties: false,
+      },
+    },
+    {
+      name: "install_skill",
+      description:
+        "Creates a skill at skills/<name>/SKILL.md with the given content. The directory is created if it does not exist. Only works in LOCAL mode. Use this to add or update a project skill.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          name: {
+            type: "string",
+            description:
+              'Skill name used as the subdirectory (e.g. "backend-patterns"). Must contain only letters, digits, hyphens or underscores.',
+          },
+          content: {
+            type: "string",
+            description:
+              "Full markdown content for SKILL.md, including YAML frontmatter (---\nname: ...\ndescription: ...\n---).",
+          },
+        },
+        required: ["name", "content"],
         additionalProperties: false,
       },
     },
@@ -625,7 +686,7 @@ server.setRequestHandler(
         }
 
         case "list_skills": {
-          const names = await listContent(R_SKILLS);
+          const names = await listSkillNames(R_SKILLS);
           return { content: [{ type: "text", text: names.join("\n") }] };
         }
 
@@ -635,7 +696,42 @@ server.setRequestHandler(
             content: [
               {
                 type: "text",
-                text: await readContentEnriched(safePath(R_SKILLS, n, ".md")),
+                text: await readContentEnriched(
+                  safePath(R_SKILLS, n, "/SKILL.md"),
+                ),
+              },
+            ],
+          };
+        }
+
+        case "install_skill": {
+          if (REMOTE_MODE) {
+            return {
+              content: [
+                {
+                  type: "text",
+                  text: "install_skill is only available in LOCAL mode (requires filesystem write access).",
+                },
+              ],
+              isError: true,
+            };
+          }
+          const skillName = String((args as any)?.name ?? "");
+          const skillContent = String((args as any)?.content ?? "");
+          if (!/^[\w-]+$/.test(skillName)) {
+            throw new Error(
+              `Invalid skill name "${skillName}". Use only letters, digits, hyphens or underscores.`,
+            );
+          }
+          const skillDir = join(REPO_ROOT, R_SKILLS, skillName);
+          const skillFile = join(skillDir, "SKILL.md");
+          await mkdir(skillDir, { recursive: true });
+          await writeFile(skillFile, skillContent, "utf-8");
+          return {
+            content: [
+              {
+                type: "text",
+                text: `Skill "${skillName}" installed at skills/${skillName}/SKILL.md`,
               },
             ],
           };

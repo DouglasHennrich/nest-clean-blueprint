@@ -88,32 +88,33 @@ export class CreateMyEntityService implements TCreateMyEntityService {
 ## Entity Pattern
 
 ```typescript
-@Entity('my-entities')
+@Entity("my-entities")
 export class MyEntity implements IMyEntityModel {
-  @PrimaryGeneratedColumn('uuid')
+  @PrimaryGeneratedColumn("uuid")
   id: string;
 
-  @CreateDateColumn({ name: 'created_at' })
+  @CreateDateColumn({ name: "created_at" })
   createdAt: Date;
 
-  @UpdateDateColumn({ name: 'updated_at' })
+  @UpdateDateColumn({ name: "updated_at" })
   updatedAt: Date;
 
-  @DeleteDateColumn({ name: 'deleted_at', nullable: true })
+  @DeleteDateColumn({ name: "deleted_at", nullable: true })
   deletedAt?: Date;
 
   // Relations use Model interfaces, not Entity classes
   @ManyToOne(() => OtherEntity)
-  @JoinColumn({ name: 'other_entity_id' })
+  @JoinColumn({ name: "other_entity_id" })
   otherEntity?: IOtherModel;
 
-  @Column({ name: 'other_entity_id' })
+  @Column({ name: "other_entity_id" })
   @Index()
   otherEntityId: string;
 }
 ```
 
 **Rules:**
+
 - Always add `@Index()` on FK columns
 - Use `@Index()` decorator + `CREATE INDEX` in migration
 - Relations reference `I[Name]Model` interfaces, not entity classes
@@ -124,10 +125,15 @@ export class MyEntity implements IMyEntityModel {
 
 ```typescript
 export abstract class IMyEntitiesRepository {
-  abstract create(data: Omit<IMyEntityModel, 'id' | 'createdAt' | 'updatedAt'>): Promise<IMyEntityModel>;
+  abstract create(
+    data: Omit<IMyEntityModel, "id" | "createdAt" | "updatedAt">,
+  ): Promise<IMyEntityModel>;
   abstract findById(id: string): Promise<IMyEntityModel | null>;
   abstract list(filters: TListFilters): Promise<IMyEntityModel[]>;
-  abstract update(id: string, data: Partial<IMyEntityModel>): Promise<IMyEntityModel>;
+  abstract update(
+    id: string,
+    data: Partial<IMyEntityModel>,
+  ): Promise<IMyEntityModel>;
   abstract delete(id: string): Promise<void>;
 }
 ```
@@ -136,8 +142,10 @@ Use TypeORM operators directly — never MongoDB-style:
 
 ```typescript
 // ✅ CORRECT
-import { IsNull, Not, MoreThan, In, Between } from 'typeorm';
-await this.repo.findOne({ where: { deletedAt: IsNull(), status: Not('inactive') } });
+import { IsNull, Not, MoreThan, In, Between } from "typeorm";
+await this.repo.findOne({
+  where: { deletedAt: IsNull(), status: Not("inactive") },
+});
 
 // ❌ WRONG
 await this.repo.findOne({ where: { deletedAt: { $ne: null } } });
@@ -148,7 +156,7 @@ await this.repo.findOne({ where: { deletedAt: { $ne: null } } });
 ## DTO Validation with Zod
 
 ```typescript
-import { z } from 'zod';
+import { z } from "zod";
 
 export const createMyEntityDtoSchema = z.object({
   name: z.string().min(1),
@@ -163,13 +171,15 @@ export type TCreateMyEntityDtoSchema = z.infer<typeof createMyEntityDtoSchema>;
 ## Controller Pattern
 
 ```typescript
-@Controller('my-entities')
+@Controller("my-entities")
 export class CreateMyEntityController {
   constructor(private readonly service: TCreateMyEntityService) {}
 
   @Post()
   @ApiDocumentation(CreateMyEntityDoc)
-  async handle(@Body() body: TCreateMyEntityDtoSchema): Promise<MyEntityPresenter> {
+  async handle(
+    @Body() body: TCreateMyEntityDtoSchema,
+  ): Promise<MyEntityPresenter> {
     const result = await this.service.execute(body);
     if (result.error) throw result.error;
     return MyEntityPresenter.toHTTP(result.getValue()!);
@@ -194,10 +204,13 @@ await this.cache.del(`user:${userId}`);
 ```
 
 **Distributed lock pattern:**
+
 ```typescript
 const lockKey = `my-lock-${entityId}`;
-const lock = await this.distributedLockService.acquireLock(lockKey, { ttl: 30 });
-if (!lock) return Result.fail(new Error('Already processing'));
+const lock = await this.distributedLockService.acquireLock(lockKey, {
+  ttl: 30,
+});
+if (!lock) return Result.fail(new Error("Already processing"));
 
 try {
   // ... critical section ...
@@ -260,8 +273,8 @@ Never log sensitive fields (passwords, tokens, base64 file content).
 
 ```typescript
 // Always use date-fns, never native Date methods
-import { isAfter, addHours, formatISO } from 'date-fns';
-import { zonedTimeToUtc } from 'date-fns-tz';
+import { isAfter, addHours, formatISO } from "date-fns";
+import { zonedTimeToUtc } from "date-fns-tz";
 
 const expiry = addHours(new Date(), 24);
 const isExpired = isAfter(new Date(), expiry);

@@ -81,6 +81,7 @@ git diff HEAD --name-only
 ```
 
 Review each changed file for:
+
 - Unintended changes
 - Missing error handling in new services
 - Raw entities returned from controllers (not through Presenters)
@@ -151,11 +152,11 @@ git diff main --stat
 
 ## When to Run Each Test Suite
 
-| Scenario | Unit Tests | E2E Tests |
-|----------|-----------|-----------|
-| Changed a service | ✅ Required | Optional |
-| Changed a controller | ✅ Required | ✅ Required |
+| Scenario                 | Unit Tests  | E2E Tests      |
+| ------------------------ | ----------- | -------------- |
+| Changed a service        | ✅ Required | Optional       |
+| Changed a controller     | ✅ Required | ✅ Required    |
 | Changed repository query | ✅ Required | ✅ Recommended |
-| Added a new module | ✅ Required | ✅ Required |
-| Changed a migration | ✅ Required | ✅ Required |
-| Refactored utilities | ✅ Required | Optional |
+| Added a new module       | ✅ Required | ✅ Required    |
+| Changed a migration      | ✅ Required | ✅ Required    |
+| Refactored utilities     | ✅ Required | Optional       |

@@ -1,6 +1,6 @@
 {
   "name": "@nest-clean-blueprint/mcp-server",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "MCP server exposing the nest-clean-blueprint architecture, patterns, conventions, providers and templates.",
   "private": true,
   "type": "module",
