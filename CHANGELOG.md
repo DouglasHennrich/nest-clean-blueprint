@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [mcp-server@0.3.0] - 2026-05-29
+
+### Added
+
+- **`setup_speckit` MCP tool** — executes `specify init --here --integration copilot --script sh` followed by `specify extension add squad --from <zip>` in `REPO_ROOT`. LOCAL mode only; aborts on first command failure. Requires `specify` CLI in PATH.
+
+---
+
 ## [0.1.0] - 2026-05-09
 
 ### Added

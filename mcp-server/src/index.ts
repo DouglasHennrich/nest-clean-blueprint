@@ -19,9 +19,13 @@ import {
   CallToolRequest,
   ListToolsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
+import { execFile } from "node:child_process";
 import { readFile, readdir, stat, mkdir, writeFile } from "node:fs/promises";
 import { join, resolve, dirname } from "node:path";
+import { promisify } from "node:util";
 import { fileURLToPath } from "node:url";
+
+const execFileAsync = promisify(execFile);
 
 // ── Mode detection ─────────────────────────────────────────────────────────────
 /** GitHub repository slug, e.g. "username/nest-clean-blueprint".
@@ -306,7 +310,7 @@ async function syncDocs(newVersion: string): Promise<void> {
 }
 
 const server = new Server(
-  { name: "nest-clean-blueprint", version: "0.2.0" },
+  { name: "nest-clean-blueprint", version: "0.3.0" },
   { capabilities: { tools: {} } },
 );
 
@@ -547,6 +551,16 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
         additionalProperties: false,
       },
     },
+    {
+      name: "setup_speckit",
+      description:
+        "Initialises Speckit in the project and installs the speckit.squad extension. Runs `specify init --here --integration copilot --script sh` followed by `specify extension add squad --from <zip>`. Only works in LOCAL mode. Requires the `specify` CLI to be installed and available in PATH.",
+      inputSchema: {
+        type: "object",
+        properties: {},
+        additionalProperties: false,
+      },
+    },
   ],
 }));
 
@@ -735,6 +749,47 @@ server.setRequestHandler(
               },
             ],
           };
+        }
+
+        case "setup_speckit": {
+          if (REMOTE_MODE) {
+            return {
+              content: [
+                {
+                  type: "text",
+                  text: "setup_speckit is only available in LOCAL mode (requires shell execution).",
+                },
+              ],
+              isError: true,
+            };
+          }
+
+          const SQUAD_ZIP =
+            "https://github.com/DouglasHennrich/spec-kit-squad/archive/refs/tags/v2.0.0.zip";
+
+          const initResult = await execFileAsync(
+            "specify",
+            ["init", "--here", "--integration", "copilot", "--script", "sh"],
+            { cwd: REPO_ROOT },
+          );
+
+          const addResult = await execFileAsync(
+            "specify",
+            ["extension", "add", "squad", "--from", SQUAD_ZIP],
+            { cwd: REPO_ROOT },
+          );
+
+          const output = [
+            "✅ Speckit setup complete.",
+            "",
+            "── specify init ──",
+            initResult.stdout.trim() || "(no output)",
+            "",
+            "── specify extension add squad ──",
+            addResult.stdout.trim() || "(no output)",
+          ].join("\n");
+
+          return { content: [{ type: "text", text: output }] };
         }
 
         case "validate_module_structure": {

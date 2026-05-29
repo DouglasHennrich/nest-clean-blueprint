@@ -22,6 +22,7 @@ pnpm build
 | `get_email_template_example` | Returns the EJS welcome template + partials |
 | `get_checklist` | Returns `docs/checklist-pr.md` |
 | `validate_module_structure` | Checks a module folder for required layout |
+| `setup_speckit` | Runs `specify init` + `specify extension add squad` in `REPO_ROOT` (LOCAL mode only) |
 
 ## Register with Copilot / Claude / Cursor
 
