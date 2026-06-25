@@ -1,6 +1,6 @@
-import { Module } from "@nestjs/common";
-import { THasher, BcryptHasher } from "./services/bcrypt-hasher.service";
-import { TEncrypter, JwtEncrypter } from "./services/jwt-encrypter.service";
+import { Module } from '@nestjs/common';
+import { THasher, BcryptHasher } from './services/bcrypt-hasher.service';
+import { TEncrypter, JwtEncrypter } from './services/jwt-encrypter.service';
 
 /**
  * CryptographyModule

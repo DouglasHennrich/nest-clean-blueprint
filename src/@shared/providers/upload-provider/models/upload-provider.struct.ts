@@ -1,4 +1,4 @@
-import { Result } from "@/@shared/classes/result";
+import { Result } from '@/@shared/classes/result';
 
 export interface IUploadFileDto {
   /** Logical bucket / folder. Map to your concrete S3 buckets in the provider. */
@@ -43,7 +43,7 @@ export abstract class TUploadProvider {
   abstract deleteFile(payload: IStorageOptions): Promise<Result<void>>;
 }
 
-export const UPLOAD_PROVIDER_OPTIONS = "UPLOAD_PROVIDER_OPTIONS";
+export const UPLOAD_PROVIDER_OPTIONS = 'UPLOAD_PROVIDER_OPTIONS';
 
 export interface IUploadProviderOptions {
   region: string;

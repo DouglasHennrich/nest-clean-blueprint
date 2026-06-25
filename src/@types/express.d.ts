@@ -1,4 +1,5 @@
-import { TCurrentUser } from "@/modules/authenticate/models/current-user.struct";
+/* eslint-disable @typescript-eslint/naming-convention */
+import { TCurrentUser } from '@/modules/authenticate/models/current-user.struct';
 
 declare global {
   namespace Express {

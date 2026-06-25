@@ -1,5 +1,5 @@
-import { Injectable } from "@nestjs/common";
-import * as bcrypt from "bcryptjs";
+import { Injectable } from '@nestjs/common';
+import * as bcrypt from 'bcryptjs';
 
 /**
  * THasher — DI token for password hashing operations.

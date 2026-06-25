@@ -4,6 +4,7 @@
  *
  * Extend this interface in your domain to add user-specific fields.
  */
+/* eslint-disable-next-line @typescript-eslint/naming-convention */
 export interface TCurrentUser {
   id: string;
   [key: string]: unknown;

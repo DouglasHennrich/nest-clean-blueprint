@@ -1,11 +1,11 @@
-import { Injectable } from "@nestjs/common";
-import { InjectRepository } from "@nestjs/typeorm";
-import { Repository } from "typeorm";
-import { AbstractRepository } from "@/@shared/classes/repository";
-import { ILogger, CustomLogger } from "@/@shared/classes/custom-logger";
-import { TEnvService } from "@/modules/env/services/env.service";
-import { OrderEntity } from "../entities/order.entity";
-import { IOrderModel } from "../models/order.model";
+import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { AbstractRepository } from '@/@shared/classes/repository';
+import { ILogger, CustomLogger } from '@/@shared/classes/custom-logger';
+import { TEnvService } from '@/modules/env/services/env.service';
+import { OrderEntity } from '../entities/order.entity';
+import { IOrderModel } from '../models/order.model';
 
 /**
  * IOrdersRepository — DI token (extends AbstractRepository so it doubles as the type).
@@ -22,7 +22,7 @@ export class OrdersRepository extends IOrdersRepository {
     repository: Repository<OrderEntity>,
     envService: TEnvService,
   ) {
-    const logger: ILogger = new CustomLogger(OrdersRepository.name);
+    const logger: ILogger = new CustomLogger(envService, OrdersRepository.name);
     super(repository, envService, logger);
   }
 }

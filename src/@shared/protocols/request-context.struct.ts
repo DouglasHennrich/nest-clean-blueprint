@@ -6,9 +6,11 @@
  */
 export interface IRequestContext {
   requestId: string;
-  userId?: string;
-  userTimezone?: string;
   ip?: string;
   userAgent?: string;
+  timestamp?: Date;
+  query?: Record<string, any>;
+  body?: Record<string, any>;
+  params?: Record<string, any>;
   [key: string]: any;
 }

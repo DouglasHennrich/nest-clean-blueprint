@@ -5,7 +5,7 @@ export interface IEncryptDecryptProviderOptions {
 }
 
 export const ENCRYPT_DECRYPT_PROVIDER_OPTIONS =
-  "ENCRYPT_DECRYPT_PROVIDER_OPTIONS";
+  'ENCRYPT_DECRYPT_PROVIDER_OPTIONS';
 
 /**
  * TEncryptDecryptProvider

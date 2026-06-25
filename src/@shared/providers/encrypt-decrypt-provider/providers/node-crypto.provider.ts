@@ -1,10 +1,10 @@
-import * as crypto from "node:crypto";
-import { Inject, Injectable } from "@nestjs/common";
+import * as crypto from 'node:crypto';
+import { Inject, Injectable } from '@nestjs/common';
 import {
   ENCRYPT_DECRYPT_PROVIDER_OPTIONS,
   IEncryptDecryptProviderOptions,
   TEncryptDecryptProvider,
-} from "../models/encrypt-decrypt-provider.struct";
+} from '../models/encrypt-decrypt-provider.struct';
 
 /**
  * NodeCryptoProvider
@@ -23,20 +23,20 @@ export class NodeCryptoProvider implements TEncryptDecryptProvider {
   ) {}
 
   encrypt(text: string): string {
-    if (!text || !text.length) return "";
+    if (!text || !text.length) return '';
 
     const cipher = crypto.createCipheriv(
       this.options.algorithm,
       this.options.encryptionKey,
       this.options.iv,
     );
-    let encrypted = cipher.update(text, "utf-8", "hex");
-    encrypted += cipher.final("hex");
+    let encrypted = cipher.update(text, 'utf-8', 'hex');
+    encrypted += cipher.final('hex');
     return encrypted;
   }
 
   decrypt(encryptedText: string): string {
-    if (!encryptedText || !encryptedText.length) return "";
+    if (!encryptedText || !encryptedText.length) return '';
 
     try {
       const decipher = crypto.createDecipheriv(
@@ -44,11 +44,11 @@ export class NodeCryptoProvider implements TEncryptDecryptProvider {
         this.options.encryptionKey,
         this.options.iv,
       );
-      let decrypted = decipher.update(encryptedText, "hex", "utf-8");
-      decrypted += decipher.final("utf-8");
+      let decrypted = decipher.update(encryptedText, 'hex', 'utf-8');
+      decrypted += decipher.final('utf-8');
       return decrypted;
     } catch {
-      return "";
+      return '';
     }
   }
 }

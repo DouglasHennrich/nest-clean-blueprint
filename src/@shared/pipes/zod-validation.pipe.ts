@@ -1,5 +1,5 @@
-import { PipeTransform } from "@nestjs/common";
-import { ZodError, ZodSchema } from "zod";
+import { PipeTransform } from '@nestjs/common';
+import { ZodError, ZodSchema } from 'zod';
 
 /**
  * ZodValidationPipe
@@ -22,7 +22,7 @@ export class ZodValidationPipe implements PipeTransform {
         throw error;
       }
       throw new ZodError([
-        { code: "custom", path: [], message: "Validation failed" },
+        { code: 'custom', path: [], message: 'Validation failed' },
       ]);
     }
   }

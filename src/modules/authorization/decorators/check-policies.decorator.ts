@@ -1,7 +1,7 @@
-import { SetMetadata } from "@nestjs/common";
-import { TPolicyHandler } from "../models/policy.struct";
+import { SetMetadata } from '@nestjs/common';
+import { TPolicyHandler } from '../models/policy.struct';
 
-export const CHECK_POLICIES_KEY = "check_policy";
+export const CHECK_POLICIES_KEY = 'check_policy';
 
 /**
  * @CheckPolicies decorator

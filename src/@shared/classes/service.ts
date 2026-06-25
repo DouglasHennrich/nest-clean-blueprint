@@ -1,6 +1,6 @@
-import { Result } from "./result";
-import { IRequestContext } from "../protocols/request-context.struct";
-import { ILogger } from "./custom-logger";
+import { Result } from './result';
+import { IRequestContext } from '../protocols/request-context.struct';
+import { ILogger } from './custom-logger';
 
 /**
  * AbstractService<Dto, Response>
@@ -16,8 +16,8 @@ import { ILogger } from "./custom-logger";
 export abstract class AbstractService<Dto, Response> {
   logger?: ILogger;
 
-  execute: (
+  abstract execute(
     payload: Dto,
     context?: IRequestContext,
-  ) => Promise<Result<Response>>;
+  ): Promise<Result<Response>>;
 }

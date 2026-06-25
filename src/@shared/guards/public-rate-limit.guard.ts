@@ -4,11 +4,11 @@ import {
   HttpException,
   HttpStatus,
   Injectable,
-} from "@nestjs/common";
-import { Reflector } from "@nestjs/core";
-import { Request } from "express";
-import { TDataCacheService } from "@/@shared/modules/cache/services/data-cache.service";
-import { IS_PUBLIC_KEY } from "@/@decorators/public.decorator";
+} from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
+import { Request } from 'express';
+import { TDataCacheService } from '@/@shared/modules/cache/services/data-cache.service';
+import { IS_PUBLIC_KEY } from '@/@decorators/public.decorator';
 
 /** Rate limit configuration for public endpoints */
 const RATE_LIMIT = {
@@ -48,7 +48,7 @@ export class PublicRateLimitGuard implements CanActivate {
     if (!isPublic) return true;
 
     const req = context.switchToHttp().getRequest<Request>();
-    const ip = req.ip ?? req.socket.remoteAddress ?? "unknown";
+    const ip = req.ip ?? req.socket.remoteAddress ?? 'unknown';
     const path = req.path;
     const key = `ratelimit:${ip}:${path}`;
 
@@ -58,8 +58,8 @@ export class PublicRateLimitGuard implements CanActivate {
       throw new HttpException(
         {
           statusCode: HttpStatus.TOO_MANY_REQUESTS,
-          message: "Too many requests — please try again later.",
-          name: "TooManyRequestsException",
+          message: 'Too many requests — please try again later.',
+          name: 'TooManyRequestsException',
           retryAfter: RATE_LIMIT.windowSeconds,
         },
         HttpStatus.TOO_MANY_REQUESTS,

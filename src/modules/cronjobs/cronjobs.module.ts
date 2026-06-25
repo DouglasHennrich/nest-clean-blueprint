@@ -1,7 +1,7 @@
-import { Module } from "@nestjs/common";
-import { ScheduleModule } from "@nestjs/schedule";
-import { CacheModule } from "@/@shared/modules/cache/cache.module";
-import { CleanupExpiredRecordsCronService } from "./services/cleanup-expired-records-cron.service";
+import { Module } from '@nestjs/common';
+import { ScheduleModule } from '@nestjs/schedule';
+import { CacheModule } from '@/@shared/modules/cache/cache.module';
+import { CleanupExpiredRecordsCronService } from './services/cleanup-expired-records-cron.service';
 
 /**
  * CronjobsModule

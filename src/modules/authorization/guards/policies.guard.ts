@@ -3,13 +3,13 @@ import {
   ExecutionContext,
   ForbiddenException,
   Injectable,
-} from "@nestjs/common";
-import { Reflector } from "@nestjs/core";
-import { Request } from "express";
-import { IS_PUBLIC_KEY } from "@/@decorators/public.decorator";
-import { CaslAbilityFactory } from "../casl-ability.factory";
-import { CHECK_POLICIES_KEY } from "../decorators/check-policies.decorator";
-import { TPolicyHandler } from "../models/policy.struct";
+} from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
+import { Request } from 'express';
+import { IS_PUBLIC_KEY } from '@/@decorators/public.decorator';
+import { CaslAbilityFactory } from '../casl-ability.factory';
+import { CHECK_POLICIES_KEY } from '../decorators/check-policies.decorator';
+import { TPolicyHandler } from '../models/policy.struct';
 
 /**
  * PoliciesGuard
@@ -47,17 +47,17 @@ export class PoliciesGuard implements CanActivate {
     const req = context.switchToHttp().getRequest<Request>();
     const user = (req as any).currentUser;
 
-    if (!user) throw new ForbiddenException("No authenticated user");
+    if (!user) throw new ForbiddenException('No authenticated user');
 
     const ability = this.caslAbilityFactory.defineAbility(user);
 
     const allowed = handlers.every((handler) =>
-      typeof handler === "function"
+      typeof handler === 'function'
         ? handler(ability)
         : handler.handle(ability),
     );
 
-    if (!allowed) throw new ForbiddenException("Insufficient permissions");
+    if (!allowed) throw new ForbiddenException('Insufficient permissions');
     return true;
   }
 }

@@ -2,10 +2,10 @@ import {
   ExecutionContext,
   Injectable,
   UnauthorizedException,
-} from "@nestjs/common";
-import { Reflector } from "@nestjs/core";
-import { AuthGuard } from "@nestjs/passport";
-import { IS_PUBLIC_KEY } from "@/@decorators/public.decorator";
+} from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
+import { AuthGuard } from '@nestjs/passport';
+import { IS_PUBLIC_KEY } from '@/@decorators/public.decorator';
 
 /**
  * JwtAuthenticateGuard
@@ -15,7 +15,7 @@ import { IS_PUBLIC_KEY } from "@/@decorators/public.decorator";
  * - Otherwise → validates the Bearer JWT using PassportModule JWT strategy
  */
 @Injectable()
-export class JwtAuthenticateGuard extends AuthGuard("jwt") {
+export class JwtAuthenticateGuard extends AuthGuard('jwt') {
   constructor(private reflector: Reflector) {
     super();
   }

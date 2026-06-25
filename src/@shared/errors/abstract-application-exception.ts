@@ -1,5 +1,5 @@
-import { HttpStatus } from "@nestjs/common";
-import { IRequestContext } from "../protocols/request-context.struct";
+import { HttpStatus } from '@nestjs/common';
+import { IRequestContext } from '../protocols/request-context.struct';
 
 /**
  * Base class for all domain/application exceptions.
@@ -22,7 +22,7 @@ export abstract class AbstractApplicationException extends Error {
     context?: IRequestContext,
   ) {
     super(message);
-    this.name = name || "AbstractApplicationException";
+    this.name = name || 'AbstractApplicationException';
     this.statusCode = statusCode || HttpStatus.INTERNAL_SERVER_ERROR;
     this.context = context;
   }
@@ -34,7 +34,7 @@ export abstract class AbstractApplicationException extends Error {
 export class DefaultException extends AbstractApplicationException {
   constructor(
     message: string,
-    name: string = "DefaultException",
+    name: string = 'DefaultException',
     statusCode: number = HttpStatus.BAD_REQUEST,
     context?: IRequestContext,
   ) {

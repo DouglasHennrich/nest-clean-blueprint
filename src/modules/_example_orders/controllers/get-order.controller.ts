@@ -1,17 +1,17 @@
-import { Controller, Get, Param } from "@nestjs/common";
-import { ZodValidationPipe } from "@/@shared/pipes/zod-validation.pipe";
-import { AbstractApplicationException } from "@/@shared/errors/abstract-application-exception";
-import { ReqContext } from "@/@decorators/request-context.decorator";
-import { IRequestContext } from "@/@shared/protocols/request-context.struct";
-import { TGetOrderService } from "../services/get-order.service";
-import { IOrderPresenter } from "../presenters/order.presenter";
+import { Controller, Get, Param } from '@nestjs/common';
+import { ZodValidationPipe } from '@/@shared/pipes/zod-validation.pipe';
+import { AbstractApplicationException } from '@/@shared/errors/abstract-application-exception';
+import { ReqContext } from '@/@decorators/request-context.decorator';
+import { IRequestContext } from '@/@shared/protocols/request-context.struct';
+import { TGetOrderService } from '../services/get-order.service';
+import { IOrderPresenter } from '../presenters/order.presenter';
 import {
   getOrderDtoParamSchema,
   TGetOrderDtoParamSchema,
-} from "../dto/order.dto";
+} from '../dto/order.dto';
 
 // Convention: full path lives in @Controller. The HTTP method decorator stays empty.
-@Controller("orders/:id")
+@Controller('orders/:id')
 export class GetOrderController {
   constructor(
     private getOrderService: TGetOrderService,

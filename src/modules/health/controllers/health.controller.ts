@@ -1,12 +1,12 @@
-import { Controller, Get } from "@nestjs/common";
+import { Controller, Get } from '@nestjs/common';
 import {
   HealthCheck,
   HealthCheckService,
   TypeOrmHealthIndicator,
   MemoryHealthIndicator,
   DiskHealthIndicator,
-} from "@nestjs/terminus";
-import { Public } from "@/@decorators/public.decorator";
+} from '@nestjs/terminus';
+import { Public } from '@/@decorators/public.decorator';
 
 /**
  * HealthController
@@ -20,7 +20,7 @@ import { Public } from "@/@decorators/public.decorator";
  *   - disk:     Disk usage ≤ 90%
  */
 @Public()
-@Controller("health")
+@Controller('health')
 export class HealthController {
   constructor(
     private readonly health: HealthCheckService,
@@ -33,12 +33,12 @@ export class HealthController {
   @HealthCheck()
   check() {
     return this.health.check([
-      () => this.db.pingCheck("database", { timeout: 1500 }),
-      () => this.memory.checkRSS("mem_rss", 1024 * 2 ** 20),
-      () => this.memory.checkHeap("mem_heap", 512 * 2 ** 20),
+      () => this.db.pingCheck('database', { timeout: 1500 }),
+      () => this.memory.checkRSS('mem_rss', 1024 * 2 ** 20),
+      () => this.memory.checkHeap('mem_heap', 512 * 2 ** 20),
       () =>
-        this.disk.checkStorage("disk", {
-          path: "/",
+        this.disk.checkStorage('disk', {
+          path: '/',
           thresholdPercent: 0.9,
         }),
     ]);

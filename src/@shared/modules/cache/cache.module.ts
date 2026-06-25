@@ -1,13 +1,13 @@
-import { Global, Module } from "@nestjs/common";
-import { CacheModule as NestCacheModule } from "@nestjs/cache-manager";
-import { createKeyv } from "@keyv/redis";
-import { EnvModule } from "@/modules/env/env.module";
-import { TEnvService } from "@/modules/env/services/env.service";
-import { RedisConnectionHelper } from "@/@shared/helpers/redis-connection.helper";
+import { Global, Module } from '@nestjs/common';
+import { CacheModule as NestCacheModule } from '@nestjs/cache-manager';
+import { createKeyv } from '@keyv/redis';
+import { EnvModule } from '@/modules/env/env.module';
+import { TEnvService } from '@/modules/env/services/env.service';
+import { RedisConnectionHelper } from '@/@shared/helpers/redis-connection.helper';
 import {
   TDataCacheService,
   DataCacheService,
-} from "./services/data-cache.service";
+} from './services/data-cache.service';
 
 @Global()
 @Module({
@@ -17,7 +17,7 @@ import {
       imports: [EnvModule],
       inject: [TEnvService],
       useFactory: (env: TEnvService) => ({
-        stores: [createKeyv(RedisConnectionHelper.createCacheRedisUrl(env))],
+        stores: [createKeyv(RedisConnectionHelper.createCacheConnection(env))],
         ttl: 3600,
       }),
     }),

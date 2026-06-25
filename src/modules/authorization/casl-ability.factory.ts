@@ -1,24 +1,24 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable } from '@nestjs/common';
 import {
   AbilityBuilder,
   MongoAbility,
   createMongoAbility,
-} from "@casl/ability";
-import { TCurrentUser } from "@/modules/authenticate/models/current-user.struct";
+} from '@casl/ability';
+import { TCurrentUser } from '@/modules/authenticate/models/current-user.struct';
 
 export const PERMISSIONS_ACTIONS = [
-  "manage",
-  "read",
-  "write",
-  "delete",
+  'manage',
+  'read',
+  'write',
+  'delete',
 ] as const;
 export const PERMISSIONS_RESOURCES = [
-  "all",
-  "orders",
-  "items",
-  "catalogs",
-  "widgets",
-  "accounts",
+  'all',
+  'orders',
+  'items',
+  'catalogs',
+  'widgets',
+  'accounts',
 ] as const;
 
 export type TPermissionsActions = (typeof PERMISSIONS_ACTIONS)[number];
@@ -45,11 +45,11 @@ export class CaslAbilityFactory {
     const { can, build } = new AbilityBuilder<TAppAbility>(createMongoAbility);
     const permissions = user.permissions ?? [];
 
-    if (permissions.includes("manage:all") || permissions.includes("all")) {
-      can("manage", "all");
+    if (permissions.includes('manage:all') || permissions.includes('all')) {
+      can('manage', 'all');
     } else {
       permissions.forEach((perm) => {
-        const parts = perm.split(":");
+        const parts = perm.split(':');
 
         if (parts.length < 2) return;
 
@@ -59,17 +59,17 @@ export class CaslAbilityFactory {
 
         if (feature) {
           can(action, resource, { feature } as any);
-          if (action === "write") can("read", resource, { feature } as any);
+          if (action === 'write') can('read', resource, { feature } as any);
         } else {
           can(action, resource);
-          if (action === "write") can("read", resource);
+          if (action === 'write') can('read', resource);
         }
       });
     }
 
     return build({
       detectSubjectType: (item: any) =>
-        typeof item === "string" ? item : item.__caslSubjectType__,
+        typeof item === 'string' ? item : item.__caslSubjectType__,
     });
   }
 }

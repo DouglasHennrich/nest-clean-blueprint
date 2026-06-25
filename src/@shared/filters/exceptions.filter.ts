@@ -5,13 +5,13 @@ import {
   HttpException,
   HttpStatus,
   Injectable,
-} from "@nestjs/common";
-import { Request, Response } from "express";
-import { ZodError } from "zod";
-import { isAxiosError } from "axios";
-import { AbstractApplicationException } from "@/@shared/errors/abstract-application-exception";
-import { ILogger } from "@/@shared/classes/custom-logger";
-import { AsyncContext } from "@/@shared/classes/async-context";
+} from '@nestjs/common';
+import { Request, Response } from 'express';
+import { ZodError } from 'zod';
+import { isAxiosError } from 'axios';
+import { AbstractApplicationException } from '@/@shared/errors/abstract-application-exception';
+import { ILogger } from '@/@shared/classes/custom-logger';
+import { AsyncContext } from '@/@shared/classes/async-context';
 
 /**
  * HTTP status codes treated as server-side failures — logged at error level.
@@ -51,13 +51,13 @@ export class AllExceptionsFilter implements ExceptionFilter {
       return;
     }
 
-    const logId = AsyncContext.getRequestId() ?? req.requestId ?? "no-id";
+    const logId = AsyncContext.getRequestId() ?? req.requestId ?? 'no-id';
     const exc = exception as any;
 
     // Seed defaults from the raw exception before type-specific overrides
     let statusCode: number = exc?.status ?? HttpStatus.INTERNAL_SERVER_ERROR;
-    let message: string = exc?.message ?? "Internal server error";
-    let errorName: string = exc?.name ?? "InternalServerError";
+    let message: string = exc?.message ?? 'Internal server error';
+    let errorName: string = exc?.name ?? 'InternalServerError';
     let validationErrors: Array<{
       field: string;
       message: string;
@@ -70,10 +70,10 @@ export class AllExceptionsFilter implements ExceptionFilter {
       errorName = exception.name;
     } else if (exception instanceof ZodError) {
       statusCode = HttpStatus.BAD_REQUEST;
-      errorName = "ValidationError";
-      message = "Validation failed";
+      errorName = 'ValidationError';
+      message = 'Validation failed';
       validationErrors = exception.errors.map((e) => ({
-        field: e.path.join("."),
+        field: e.path.join('.'),
         message: e.message,
         code: e.code,
       }));
@@ -84,14 +84,14 @@ export class AllExceptionsFilter implements ExceptionFilter {
       // NestJS HttpExceptions can carry a { message, statusCode } response
       // (e.g., built-in ValidationPipe with class-validator messages)
       const httpRes = exception.getResponse();
-      if (typeof httpRes === "object" && httpRes !== null) {
+      if (typeof httpRes === 'object' && httpRes !== null) {
         const resObj = httpRes as Record<string, unknown>;
         if (resObj.message) {
           message = Array.isArray(resObj.message)
-            ? (resObj.message as string[]).join(", ")
+            ? (resObj.message as string[]).join(', ')
             : String(resObj.message);
         }
-      } else if (typeof httpRes === "string") {
+      } else if (typeof httpRes === 'string') {
         message = httpRes;
       }
     }
@@ -110,7 +110,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
     // - 5xx → error level (always, except ValidationError which is a client mistake)
     // - 4xx → warn level (unless suppressed via SKIP_WARN_LOG_EXCEPTIONS)
     // - ValidationError gets its own warn below, with the errors[] array included
-    if (exc?.stack && errorName !== "ValidationError") {
+    if (exc?.stack && errorName !== 'ValidationError') {
       if (SERVER_ERROR_STATUSES.includes(statusCode)) {
         this.logger.error(message, logData);
       } else if (!SKIP_WARN_LOG_EXCEPTIONS.includes(errorName)) {
@@ -149,7 +149,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
    *                  errors from a specific outbound integration (e.g., a webhook).
    */
   private shouldIgnore(exception: unknown, req: Request): boolean {
-    if (req.path === "/favicon.ico") return true;
+    if (req.path === '/favicon.ico') return true;
 
     // Customize to suppress specific outbound integration errors:
     // if (isAxiosError(exception)) {

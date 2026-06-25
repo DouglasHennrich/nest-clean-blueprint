@@ -1,9 +1,9 @@
-import { InjectQueue } from "@nestjs/bullmq";
-import { Injectable } from "@nestjs/common";
-import { Queue } from "bullmq";
-import { ILogger } from "@/@shared/classes/custom-logger";
-import { Result } from "@/@shared/classes/result";
-import { IExampleJobData } from "../dto/example-job.dto";
+import { InjectQueue } from '@nestjs/bullmq';
+import { Injectable } from '@nestjs/common';
+import { Queue } from 'bullmq';
+import { ILogger } from '@/@shared/classes/custom-logger';
+import { Result } from '@/@shared/classes/result';
+import { IExampleJobData } from '../dto/example-job.dto';
 
 /**
  * TExampleSchedulerService — DI token for the example queue scheduler.
@@ -18,7 +18,7 @@ export abstract class TExampleSchedulerService {
 @Injectable()
 export class ExampleSchedulerService implements TExampleSchedulerService {
   constructor(
-    @InjectQueue("example-queue") private readonly queue: Queue,
+    @InjectQueue('example-queue') private readonly queue: Queue,
     public readonly logger: ILogger,
   ) {
     this.logger.setContextName(ExampleSchedulerService.name);
@@ -35,7 +35,7 @@ export class ExampleSchedulerService implements TExampleSchedulerService {
       const existing = await this.queue.getJob(jobId);
       if (existing) {
         const state = await existing.getState();
-        if (["active", "waiting", "delayed"].includes(state)) {
+        if (['active', 'waiting', 'delayed'].includes(state)) {
           this.logger.warn(
             `Job ${jobId} already in state ${state} — skipping enqueue`,
           );
@@ -43,10 +43,10 @@ export class ExampleSchedulerService implements TExampleSchedulerService {
         }
       }
 
-      await this.queue.add("process", data, {
+      await this.queue.add('process', data, {
         jobId,
         attempts: 3,
-        backoff: { type: "exponential", delay: 2000 },
+        backoff: { type: 'exponential', delay: 2000 },
         removeOnComplete: 50,
         removeOnFail: 100,
       });

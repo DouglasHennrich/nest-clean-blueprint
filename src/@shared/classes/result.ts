@@ -1,4 +1,4 @@
-import { AbstractApplicationException } from "../errors/abstract-application-exception";
+import { AbstractApplicationException } from '../errors/abstract-application-exception';
 
 /**
  * Result<T>

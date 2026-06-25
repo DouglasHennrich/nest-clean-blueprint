@@ -1,15 +1,15 @@
-import { Inject, Injectable } from "@nestjs/common";
+import { Inject, Injectable } from '@nestjs/common';
 import {
   S3Client,
   PutObjectCommand,
   GetObjectCommand,
   DeleteObjectCommand,
   HeadObjectCommand,
-} from "@aws-sdk/client-s3";
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { v4 as uuidv4 } from "uuid";
-import { Result } from "@/@shared/classes/result";
-import { DefaultException } from "@/@shared/errors/abstract-application-exception";
+} from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { v4 as uuidv4 } from 'uuid';
+import { Result } from '@/@shared/classes/result';
+import { DefaultException } from '@/@shared/errors/abstract-application-exception';
 import {
   IGetFileBufferResult,
   IGetUrlResult,
@@ -19,7 +19,7 @@ import {
   IUploadResult,
   TUploadProvider,
   UPLOAD_PROVIDER_OPTIONS,
-} from "../models/upload-provider.struct";
+} from '../models/upload-provider.struct';
 
 /**
  * AwsS3StorageProvider
@@ -50,7 +50,7 @@ export class AwsS3StorageProvider implements TUploadProvider {
   }
 
   private parseStorageId(storageId: string): { bucket: string; key: string } {
-    const idx = storageId.indexOf("/");
+    const idx = storageId.indexOf('/');
     if (idx <= 0) {
       return { bucket: this.options.defaultBucket, key: storageId };
     }
@@ -63,9 +63,9 @@ export class AwsS3StorageProvider implements TUploadProvider {
   async uploadFile(dto: IUploadFileDto): Promise<Result<IUploadResult>> {
     try {
       const fileId = uuidv4();
-      const ext = dto.file.originalname.includes(".")
-        ? dto.file.originalname.split(".").pop()
-        : "";
+      const ext = dto.file.originalname.includes('.')
+        ? dto.file.originalname.split('.').pop()
+        : '';
       const key = ext
         ? `${dto.bucket}/${fileId}.${ext}`
         : `${dto.bucket}/${fileId}`;
@@ -92,7 +92,7 @@ export class AwsS3StorageProvider implements TUploadProvider {
       return Result.fail(
         new DefaultException(
           `Failed to upload file: ${error.message}`,
-          "UploadException",
+          'UploadException',
           500,
         ),
       );
@@ -112,7 +112,7 @@ export class AwsS3StorageProvider implements TUploadProvider {
       return Result.fail(
         new DefaultException(
           `Failed to sign URL: ${error.message}`,
-          "UploadSignUrlException",
+          'UploadSignUrlException',
           500,
         ),
       );
@@ -136,14 +136,14 @@ export class AwsS3StorageProvider implements TUploadProvider {
       }
       return Result.success({
         buffer: Buffer.concat(chunks),
-        mimeType: head.ContentType ?? "application/octet-stream",
+        mimeType: head.ContentType ?? 'application/octet-stream',
         size: head.ContentLength ?? 0,
       });
     } catch (error: any) {
       return Result.fail(
         new DefaultException(
           `Failed to read file: ${error.message}`,
-          "UploadReadException",
+          'UploadReadException',
           500,
         ),
       );
@@ -161,7 +161,7 @@ export class AwsS3StorageProvider implements TUploadProvider {
       return Result.fail(
         new DefaultException(
           `Failed to delete file: ${error.message}`,
-          "UploadDeleteException",
+          'UploadDeleteException',
           500,
         ),
       );

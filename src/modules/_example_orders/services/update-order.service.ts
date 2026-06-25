@@ -1,12 +1,12 @@
-import { Injectable } from "@nestjs/common";
-import { AbstractService } from "@/@shared/classes/service";
-import { Result } from "@/@shared/classes/result";
-import { ILogger, CustomLogger } from "@/@shared/classes/custom-logger";
-import { IRequestContext } from "@/@shared/protocols/request-context.struct";
-import { IOrdersRepository } from "../repositories/orders.repository";
-import { IOrderModel } from "../models/order.model";
-import { OrderNotFoundException } from "../errors/order.errors";
-import { TUpdateOrderDtoServiceSchema } from "../dto/order.dto";
+import { Injectable } from '@nestjs/common';
+import { AbstractService } from '@/@shared/classes/service';
+import { Result } from '@/@shared/classes/result';
+import { ILogger } from '@/@shared/classes/custom-logger';
+import { IRequestContext } from '@/@shared/protocols/request-context.struct';
+import { IOrdersRepository } from '../repositories/orders.repository';
+import { IOrderModel } from '../models/order.model';
+import { OrderNotFoundException } from '../errors/order.errors';
+import { TUpdateOrderDtoServiceSchema } from '../dto/order.dto';
 
 export abstract class TUpdateOrderService extends AbstractService<
   TUpdateOrderDtoServiceSchema,
@@ -15,9 +15,19 @@ export abstract class TUpdateOrderService extends AbstractService<
 
 @Injectable()
 export class UpdateOrderService implements TUpdateOrderService {
-  public logger: ILogger = new CustomLogger(UpdateOrderService.name);
+  constructor(
+    /// //////////////////////////
+    //  Repositories
+    /// //////////////////////////
+    private ordersRepository: IOrdersRepository,
 
-  constructor(private ordersRepository: IOrdersRepository) {}
+    /// //////////////////////////
+    //  Providers
+    /// //////////////////////////
+    public logger: ILogger,
+  ) {
+    this.logger.setContextName(UpdateOrderService.name);
+  }
 
   async execute(
     { id, ...changes }: TUpdateOrderDtoServiceSchema,
@@ -30,7 +40,7 @@ export class UpdateOrderService implements TUpdateOrderService {
       return Result.fail(new OrderNotFoundException(id, context));
     }
 
-    const updated = await this.ordersRepository.update(id, changes as any);
+    const updated = await this.ordersRepository.update(id, changes);
     return Result.success(updated);
   }
 }

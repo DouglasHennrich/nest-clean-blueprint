@@ -1,4 +1,4 @@
-import { TAppAbility } from "../casl-ability.factory";
+import { TAppAbility } from '../casl-ability.factory';
 
 /**
  * IPolicyHandler — class-based policy handler.

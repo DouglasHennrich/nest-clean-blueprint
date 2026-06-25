@@ -1,4 +1,4 @@
-import { Result } from "@/@shared/classes/result";
+import { Result } from '@/@shared/classes/result';
 
 /**
  * Mail provider contracts.
@@ -62,7 +62,7 @@ export abstract class TMailProvider {
   ): Promise<Result<string>>;
 }
 
-export const MAIL_PROVIDER_OPTIONS = "MAIL_PROVIDER_OPTIONS";
+export const MAIL_PROVIDER_OPTIONS = 'MAIL_PROVIDER_OPTIONS';
 
 export interface IMailProviderOptions {
   region: string;

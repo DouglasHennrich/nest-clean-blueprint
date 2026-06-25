@@ -1,15 +1,15 @@
-import { Injectable } from "@nestjs/common";
-import { AbstractService } from "@/@shared/classes/service";
-import { Result } from "@/@shared/classes/result";
-import { ILogger, CustomLogger } from "@/@shared/classes/custom-logger";
-import { IRequestContext } from "@/@shared/protocols/request-context.struct";
-import { IOrdersRepository } from "../repositories/orders.repository";
+import { Injectable } from '@nestjs/common';
+import { AbstractService } from '@/@shared/classes/service';
+import { Result } from '@/@shared/classes/result';
+import { ILogger } from '@/@shared/classes/custom-logger';
+import { IRequestContext } from '@/@shared/protocols/request-context.struct';
+import { IOrdersRepository } from '../repositories/orders.repository';
 import {
   OrderAlreadyCancelledException,
   OrderNotFoundException,
-} from "../errors/order.errors";
-import { OrderStatusEnum } from "../enums/order-status.enum";
-import { TDeleteOrderDtoParamSchema } from "../dto/order.dto";
+} from '../errors/order.errors';
+import { OrderStatusEnum } from '../enums/order-status.enum';
+import { TDeleteOrderDtoParamSchema } from '../dto/order.dto';
 
 export abstract class TDeleteOrderService extends AbstractService<
   TDeleteOrderDtoParamSchema,
@@ -18,9 +18,19 @@ export abstract class TDeleteOrderService extends AbstractService<
 
 @Injectable()
 export class DeleteOrderService implements TDeleteOrderService {
-  public logger: ILogger = new CustomLogger(DeleteOrderService.name);
+  constructor(
+    /// //////////////////////////
+    //  Repositories
+    /// //////////////////////////
+    private ordersRepository: IOrdersRepository,
 
-  constructor(private ordersRepository: IOrdersRepository) {}
+    /// //////////////////////////
+    //  Providers
+    /// //////////////////////////
+    public logger: ILogger,
+  ) {
+    this.logger.setContextName(DeleteOrderService.name);
+  }
 
   async execute(
     { id }: TDeleteOrderDtoParamSchema,

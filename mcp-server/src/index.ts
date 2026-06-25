@@ -765,7 +765,7 @@ server.setRequestHandler(
           }
 
           const SQUAD_ZIP =
-            "https://github.com/DouglasHennrich/spec-kit-squad/archive/refs/tags/v2.0.0.zip";
+            "https://github.com/DouglasHennrich/spec-kit-squad/archive/refs/tags/v2.1.0.zip";
 
           const initResult = await execFileAsync(
             "specify",

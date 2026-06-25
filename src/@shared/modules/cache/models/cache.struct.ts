@@ -1,4 +1,4 @@
-import { Result } from "@/@shared/classes/result";
+import { Result } from '@/@shared/classes/result';
 
 export interface ICacheOptions {
   /** TTL in seconds. Default: 3600 */

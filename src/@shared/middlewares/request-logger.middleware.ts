@@ -1,15 +1,15 @@
-import { Injectable, NestMiddleware } from "@nestjs/common";
-import { Request, Response, NextFunction } from "express";
-import { ILogger } from "@/@shared/classes/custom-logger";
+import { Injectable, NestMiddleware } from '@nestjs/common';
+import { Request, Response, NextFunction } from 'express';
+import { ILogger } from '@/@shared/classes/custom-logger';
 
 const IGNORED_PATHS = [
-  "/",
-  "/health",
-  "/api/v1/health",
-  "/metrics",
-  "/favicon.ico",
+  '/',
+  '/health',
+  '/api/v1/health',
+  '/metrics',
+  '/favicon.ico',
 ];
-const LOGGED_METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE"];
+const LOGGED_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
 
 @Injectable()
 export class RequestLoggerMiddleware implements NestMiddleware {
@@ -27,7 +27,7 @@ export class RequestLoggerMiddleware implements NestMiddleware {
     const startTime = Date.now();
     this.logger.debug(`Incoming Request: ${method} ${path}`);
 
-    res.on("finish", () => {
+    res.on('finish', () => {
       const duration = Date.now() - startTime;
       this.logger.debug(
         `Response: ${method} ${path} - Status: ${res.statusCode} - Duration: ${duration}ms`,

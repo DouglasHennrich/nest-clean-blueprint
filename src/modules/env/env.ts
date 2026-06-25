@@ -1,48 +1,89 @@
-import { z } from "zod";
+import { z } from 'zod';
 
 export const envSchema = z.object({
-  // Infra
+  /// //////////////////////////
+  //  Infrastructure
+  /// //////////////////////////
+  INFRA_URL: z.string().url().default('http://localhost'),
   INFRA_PORT: z.coerce.number().default(3000),
   INFRA_ENVIRONMENT: z
-    .enum(["development", "staging", "production", "test"])
-    .default("development"),
+    .enum(['development', 'staging', 'production', 'test'])
+    .default('development'),
+  INFRA_FRONTEND_URL: z.string().url(),
 
-  // Database (PostgreSQL)
-  DATABASE_HOST: z.string().default("localhost"),
+  /// //////////////////////////
+  //  Database
+  /// //////////////////////////
+  DATABASE_HOST: z.string().default('localhost'),
   DATABASE_PORT: z.coerce.number().default(5432),
-  DATABASE_USERNAME: z.string(),
-  DATABASE_PASSWORD: z.string(),
-  DATABASE_NAME: z.string(),
+  DATABASE_USER: z.string().default('postgres'),
+  DATABASE_PASSWORD: z.string().default('postgres'),
+  DATABASE_DB_NAME: z.string().default('postgres'),
+  DATABASE_IGNORE_MIGRATIONS: z.coerce.boolean().default(false),
 
-  // Redis
-  REDIS_HOST: z.string().default("localhost"),
+  /// //////////////////////////
+  //  Redis
+  /// //////////////////////////
+  REDIS_HOST: z.string().default('localhost'),
   REDIS_PORT: z.coerce.number().default(6379),
-  REDIS_PASSWORD: z.string().optional(),
-  REDIS_TLS: z.coerce.boolean().default(false),
 
-  // Auth JWT
+  /// //////////////////////////
+  //  Auth
+  /// //////////////////////////
   AUTH_JWT_PRIVATE_KEY: z.string(),
   AUTH_JWT_PUBLIC_KEY: z.string(),
-  AUTH_JWT_EXPIRES_IN: z.string().default("1d"),
+  AUTH_JWT_ACCESS_TOKEN_EXPIRES_IN: z.string(),
+  AUTH_JWT_REFRESH_TOKEN_EXPIRES_IN: z.string(),
 
-  // Bull Board
-  BULL_BOARD_USERNAME: z.string().default("admin"),
-  BULL_BOARD_PASSWORD: z.string(),
+  /// //////////////////////////
+  //  Secrets
+  /// //////////////////////////
+  SECRET_BACKOFFICE_ACCESS_TOKEN: z.string(),
+  SECRET_BULL_BOARD_USERNAME: z.string(),
+  SECRET_BULL_BOARD_PASSWORD: z.string(),
 
-  // Pagination
-  UTILITIES_PAGINATION_LIMIT: z.coerce.number().default(20),
+  /// //////////////////////////
+  //  Utilities
+  /// //////////////////////////
+  UTILITIES_PAGINATION_LIMIT: z.coerce.number().default(100),
+  QUEUE_REQUEST_LOGS_BATCH_SIZE: z.coerce.number().default(50),
+  QUEUE_AUDIT_LOGS_BATCH_SIZE: z.coerce.number().default(100),
 
-  // AWS — SES (mail) and S3 (upload)
-  AWS_REGION: z.string().default("us-east-1"),
-  AWS_ACCESS_KEY_ID: z.string().optional(),
-  AWS_SECRET_ACCESS_KEY: z.string().optional(),
-  AWS_SES_FROM_EMAIL: z.string().email().optional(),
-  AWS_S3_BUCKET: z.string().optional(),
+  /// //////////////////////////
+  //  External APIS
+  /// //////////////////////////
+  // Encrypt Decrypt
+  EXTERNAL_ENCRYPT_DECRYPT_ALGORITHM: z.string().default('aes-256-cbc'),
+  EXTERNAL_ENCRYPT_DECRYPT_KEY: z.string().default('encryption_key'),
+  EXTERNAL_ENCRYPT_DECRYPT_IV: z.string().default('encryption_iv'),
 
-  // Encryption (AES-256-GCM compatible — see encrypt-decrypt-provider docs)
-  ENCRYPT_ALGORITHM: z.string().default("aes-256-cbc"),
-  ENCRYPT_KEY: z.string().min(32),
-  ENCRYPT_IV: z.string().min(16),
+  /// //////////////////////////
+  //  AWS
+  /// //////////////////////////
+  EXTERNAL_AWS_ACCESS_KEY_ID: z.string(),
+  EXTERNAL_AWS_SECRET_ACCESS_KEY: z.string(),
+
+  /// //////////////////////////
+  //  AWS S3
+  /// //////////////////////////
+  EXTERNAL_AWS_S3_REGION: z.string().default('us-east-1'),
+  EXTERNAL_AWS_S3_BUCKET: z.string(),
+  EXTERNAL_AWS_S3_BUCKET_PUBLIC: z.string(),
+
+  /// //////////////////////////
+  //  AWS SES
+  /// //////////////////////////
+  EXTERNAL_AWS_SES_REGION: z.string(),
+  EXTERNAL_AWS_SES_ACCESS_KEY_ID: z.string(),
+  EXTERNAL_AWS_SES_SECRET_ACCESS_KEY: z.string(),
+  EXTERNAL_AWS_SES_FROM_EMAIL: z.string(),
+  EXTERNAL_AWS_SES_FROM_NAME: z.string(),
+
+  /// //////////////////////////
+  //  Discord
+  /// //////////////////////////
+  EXTERNAL_DISCORD_WEBHOOK_URL: z.string().url().optional(),
 });
 
+/* eslint-disable-next-line @typescript-eslint/naming-convention */
 export type IEnvSchema = z.infer<typeof envSchema>;

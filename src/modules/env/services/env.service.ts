@@ -1,6 +1,6 @@
-import { Injectable } from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
-import { IEnvSchema } from "../env";
+import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { IEnvSchema } from '../env';
 
 /**
  * TEnvService — DI token for type-safe env access.

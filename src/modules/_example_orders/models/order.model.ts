@@ -1,4 +1,4 @@
-import { OrderStatusEnum } from "../enums/order-status.enum";
+import { OrderStatusEnum } from '../enums/order-status.enum';
 
 export interface IOrderModel {
   id: string;

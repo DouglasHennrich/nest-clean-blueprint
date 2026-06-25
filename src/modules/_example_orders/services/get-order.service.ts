@@ -1,12 +1,12 @@
-import { Injectable } from "@nestjs/common";
-import { AbstractService } from "@/@shared/classes/service";
-import { Result } from "@/@shared/classes/result";
-import { ILogger, CustomLogger } from "@/@shared/classes/custom-logger";
-import { IRequestContext } from "@/@shared/protocols/request-context.struct";
-import { IOrdersRepository } from "../repositories/orders.repository";
-import { IOrderModel } from "../models/order.model";
-import { OrderNotFoundException } from "../errors/order.errors";
-import { TGetOrderDtoParamSchema } from "../dto/order.dto";
+import { Injectable } from '@nestjs/common';
+import { AbstractService } from '@/@shared/classes/service';
+import { Result } from '@/@shared/classes/result';
+import { ILogger } from '@/@shared/classes/custom-logger';
+import { IRequestContext } from '@/@shared/protocols/request-context.struct';
+import { IOrdersRepository } from '../repositories/orders.repository';
+import { IOrderModel } from '../models/order.model';
+import { OrderNotFoundException } from '../errors/order.errors';
+import { TGetOrderDtoParamSchema } from '../dto/order.dto';
 
 export abstract class TGetOrderService extends AbstractService<
   TGetOrderDtoParamSchema,
@@ -15,9 +15,19 @@ export abstract class TGetOrderService extends AbstractService<
 
 @Injectable()
 export class GetOrderService implements TGetOrderService {
-  public logger: ILogger = new CustomLogger(GetOrderService.name);
+  constructor(
+    /// //////////////////////////
+    //  Repositories
+    /// //////////////////////////
+    private ordersRepository: IOrdersRepository,
 
-  constructor(private ordersRepository: IOrdersRepository) {}
+    /// //////////////////////////
+    //  Providers
+    /// //////////////////////////
+    public logger: ILogger,
+  ) {
+    this.logger.setContextName(GetOrderService.name);
+  }
 
   async execute(
     { id }: TGetOrderDtoParamSchema,

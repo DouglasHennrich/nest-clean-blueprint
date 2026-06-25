@@ -1,10 +1,10 @@
-import { Inject, Injectable } from "@nestjs/common";
-import { SESClient, SendEmailCommand } from "@aws-sdk/client-ses";
-import * as ejs from "ejs";
-import * as fs from "node:fs/promises";
-import * as path from "node:path";
-import { Result } from "@/@shared/classes/result";
-import { DefaultException } from "@/@shared/errors/abstract-application-exception";
+import { Inject, Injectable } from '@nestjs/common';
+import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses';
+import * as ejs from 'ejs';
+import * as fs from 'node:fs/promises';
+import * as path from 'node:path';
+import { Result } from '@/@shared/classes/result';
+import { DefaultException } from '@/@shared/errors/abstract-application-exception';
 import {
   ICompileTemplateOptions,
   IMailProviderOptions,
@@ -12,7 +12,7 @@ import {
   ISendTemplateEmailOptions,
   MAIL_PROVIDER_OPTIONS,
   TMailProvider,
-} from "../models/mail-provider.struct";
+} from '../models/mail-provider.struct';
 
 /**
  * AwsSesMailProvider
@@ -48,7 +48,7 @@ export class AwsSesMailProvider implements TMailProvider {
         ? opts.templatePath
         : path.resolve(opts.templatePath);
 
-      const template = await fs.readFile(absolutePath, "utf-8");
+      const template = await fs.readFile(absolutePath, 'utf-8');
 
       // Resolve partials relative to either the explicit partialsDir or the
       // template file's directory.
@@ -66,7 +66,7 @@ export class AwsSesMailProvider implements TMailProvider {
       return Result.fail(
         new DefaultException(
           `Failed to compile email template: ${error.message}`,
-          "MailTemplateCompileException",
+          'MailTemplateCompileException',
           500,
         ),
       );
@@ -96,9 +96,9 @@ export class AwsSesMailProvider implements TMailProvider {
             BccAddresses: bccAddresses,
           },
           Message: {
-            Subject: { Data: opts.subject, Charset: "UTF-8" },
+            Subject: { Data: opts.subject, Charset: 'UTF-8' },
             Body: {
-              Html: { Data: opts.html, Charset: "UTF-8" },
+              Html: { Data: opts.html, Charset: 'UTF-8' },
             },
           },
         }),
@@ -109,7 +109,7 @@ export class AwsSesMailProvider implements TMailProvider {
       return Result.fail(
         new DefaultException(
           `Failed to send email: ${error.message}`,
-          "MailSendException",
+          'MailSendException',
           500,
         ),
       );

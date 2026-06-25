@@ -1,8 +1,8 @@
-import { Processor, WorkerHost } from "@nestjs/bullmq";
-import { Injectable } from "@nestjs/common";
-import { Job } from "bullmq";
-import { ILogger } from "@/@shared/classes/custom-logger";
-import { IExampleJobData } from "../dto/example-job.dto";
+import { Processor, WorkerHost } from '@nestjs/bullmq';
+import { Injectable } from '@nestjs/common';
+import { Job } from 'bullmq';
+import { ILogger } from '@/@shared/classes/custom-logger';
+import { IExampleJobData } from '../dto/example-job.dto';
 
 /**
  * ExampleProcessor
@@ -13,7 +13,7 @@ import { IExampleJobData } from "../dto/example-job.dto";
  * - Throws Error → BullMQ retries (up to attempts configured in scheduler)
  * - Throws UnrecoverableError → job permanently fails, no more retries
  */
-@Processor("example-queue", { concurrency: 5 })
+@Processor('example-queue', { concurrency: 5 })
 @Injectable()
 export class ExampleProcessor extends WorkerHost {
   constructor(public readonly logger: ILogger) {

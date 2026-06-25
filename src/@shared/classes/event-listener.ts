@@ -1,4 +1,4 @@
-import { ILogger } from "./custom-logger";
+import { ILogger } from './custom-logger';
 
 /**
  * AbstractEventListener<Dto>
@@ -14,5 +14,5 @@ import { ILogger } from "./custom-logger";
 export abstract class AbstractEventListener<Dto> {
   logger?: ILogger;
 
-  handle: (payload: Dto) => Promise<void>;
+  abstract handle(payload: Dto): Promise<void>;
 }

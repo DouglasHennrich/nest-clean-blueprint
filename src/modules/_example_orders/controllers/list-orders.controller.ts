@@ -1,16 +1,16 @@
-import { Controller, Get, Query } from "@nestjs/common";
-import { ZodValidationPipe } from "@/@shared/pipes/zod-validation.pipe";
-import { AbstractApplicationException } from "@/@shared/errors/abstract-application-exception";
-import { ReqContext } from "@/@decorators/request-context.decorator";
-import { IRequestContext } from "@/@shared/protocols/request-context.struct";
-import { TListOrdersService } from "../services/list-orders.service";
-import { IOrderPresenter } from "../presenters/order.presenter";
+import { Controller, Get, Query } from '@nestjs/common';
+import { ZodValidationPipe } from '@/@shared/pipes/zod-validation.pipe';
+import { AbstractApplicationException } from '@/@shared/errors/abstract-application-exception';
+import { ReqContext } from '@/@decorators/request-context.decorator';
+import { IRequestContext } from '@/@shared/protocols/request-context.struct';
+import { TListOrdersService } from '../services/list-orders.service';
+import { IOrderPresenter } from '../presenters/order.presenter';
 import {
   listOrdersDtoQuerySchema,
   TListOrdersDtoQuerySchema,
-} from "../dto/order.dto";
+} from '../dto/order.dto';
 
-@Controller("orders")
+@Controller('orders')
 export class ListOrdersController {
   constructor(
     private listOrdersService: TListOrdersService,

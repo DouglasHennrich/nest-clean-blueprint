@@ -1,13 +1,13 @@
-import { CACHE_MANAGER } from "@nestjs/cache-manager";
-import { Inject, Injectable } from "@nestjs/common";
-import { Cache } from "cache-manager";
-import { ILogger } from "@/@shared/classes/custom-logger";
-import { Result } from "@/@shared/classes/result";
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Inject, Injectable } from '@nestjs/common';
+import { Cache } from 'cache-manager';
+import { ILogger } from '@/@shared/classes/custom-logger';
+import { Result } from '@/@shared/classes/result';
 import {
   DEFAULT_CACHE_OPTIONS,
   ICacheOptions,
   TAbstractCache,
-} from "../models/cache.struct";
+} from '../models/cache.struct';
 
 /**
  * TDataCacheService — DI token for JSON data caching.

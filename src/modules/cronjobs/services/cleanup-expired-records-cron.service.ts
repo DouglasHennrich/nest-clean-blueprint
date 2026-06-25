@@ -1,18 +1,19 @@
-import { Injectable } from "@nestjs/common";
-import { Cron, CronExpression } from "@nestjs/schedule";
-import { CustomLogger, ILogger } from "@/@shared/classes/custom-logger";
-import { TDataCacheService } from "@/@shared/modules/cache/services/data-cache.service";
+import { Injectable } from '@nestjs/common';
+import { Cron, CronExpression } from '@nestjs/schedule';
+import { ILogger } from '@/@shared/classes/custom-logger';
+import { TDataCacheService } from '@/@shared/modules/cache/services/data-cache.service';
 
-const CLEANUP_LOCK_KEY = "cron:lock:cleanup-expired";
+const CLEANUP_LOCK_KEY = 'cron:lock:cleanup-expired';
 const CLEANUP_LOCK_TTL_SECONDS = 5 * 60; // 5 minutes max job duration
 
 @Injectable()
 export class CleanupExpiredRecordsCronService {
-  public logger: ILogger = new CustomLogger(
-    CleanupExpiredRecordsCronService.name,
-  );
-
-  constructor(private readonly cacheService: TDataCacheService) {}
+  constructor(
+    private cacheService: TDataCacheService,
+    public logger: ILogger,
+  ) {
+    this.logger.setContextName(CleanupExpiredRecordsCronService.name);
+  }
 
   /**
    * Runs every hour. Protected by a distributed Redis lock so that
@@ -25,16 +26,16 @@ export class CleanupExpiredRecordsCronService {
   async handleCleanup(): Promise<void> {
     const acquired = await this.acquireLock();
     if (!acquired) {
-      this.logger.warn("Cleanup lock already held — skipping this run");
+      this.logger.warn('Cleanup lock already held — skipping this run');
       return;
     }
 
-    this.logger.log("Starting cleanup of expired records");
+    this.logger.log('Starting cleanup of expired records');
 
     try {
       // TODO: inject and call your domain repository/service here
       // e.g., await this.recordsRepository.deleteExpiredBefore(new Date());
-      this.logger.log("Cleanup of expired records completed");
+      this.logger.log('Cleanup of expired records completed');
     } catch (error) {
       this.logger.error(`Cleanup failed: ${(error as Error).message}`);
     } finally {
@@ -49,7 +50,7 @@ export class CleanupExpiredRecordsCronService {
 
     await this.cacheService.setSimple<string>(
       CLEANUP_LOCK_KEY,
-      "locked",
+      'locked',
       CLEANUP_LOCK_TTL_SECONDS,
     );
     return true;

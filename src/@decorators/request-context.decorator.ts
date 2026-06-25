@@ -1,7 +1,7 @@
-import { ExecutionContext, createParamDecorator } from "@nestjs/common";
-import { Request } from "express";
-import { AsyncContext } from "@/@shared/classes/async-context";
-import { IRequestContext } from "@/@shared/protocols/request-context.struct";
+import { ExecutionContext, createParamDecorator } from '@nestjs/common';
+import { Request } from 'express';
+import { AsyncContext } from '@/@shared/classes/async-context';
+import { IRequestContext } from '@/@shared/protocols/request-context.struct';
 
 /**
  * @ReqContext()
@@ -22,11 +22,11 @@ export const ReqContext = createParamDecorator(
     const asyncCtx = AsyncContext.getContext();
 
     return {
-      requestId: asyncCtx?.requestId ?? "no-request-id",
+      requestId: asyncCtx?.requestId ?? 'no-request-id',
       userId: asyncCtx?.userId,
       userTimezone: asyncCtx?.userTimezone,
       ip: req.ip,
-      userAgent: req.headers["user-agent"],
+      userAgent: req.headers['user-agent'],
     };
   },
 );

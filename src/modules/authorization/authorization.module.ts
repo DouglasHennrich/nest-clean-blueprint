@@ -1,7 +1,7 @@
-import { Module } from "@nestjs/common";
-import { APP_GUARD } from "@nestjs/core";
-import { CaslAbilityFactory } from "./casl-ability.factory";
-import { PoliciesGuard } from "./guards/policies.guard";
+import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
+import { CaslAbilityFactory } from './casl-ability.factory';
+import { PoliciesGuard } from './guards/policies.guard';
 
 /**
  * AuthorizationModule
