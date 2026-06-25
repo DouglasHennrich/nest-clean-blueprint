@@ -78,7 +78,7 @@ export interface IRepository<Entity extends ObjectLiteral, Model> {
     includeDeleted?: boolean;
     select?: FindOptionsSelect<Entity>;
     relations?: FindOptionsRelations<Entity>;
-  }): Promise<Model | null>;
+  }): Promise<Model | undefined>;
 
   findById(
     id: string,
@@ -88,14 +88,14 @@ export interface IRepository<Entity extends ObjectLiteral, Model> {
       select?: FindOptionsSelect<Entity>;
       relations?: FindOptionsRelations<Entity>;
     },
-  ): Promise<Model | null>;
+  ): Promise<Model | undefined>;
 
   findLast(criteria: {
     where?: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[];
     excludeId?: string;
     includeDeleted?: boolean;
     relations?: FindOptionsRelations<Entity>;
-  }): Promise<Model | null>;
+  }): Promise<Model | undefined>;
 
   count(criteria: {
     where?: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[];
@@ -115,7 +115,7 @@ export interface IRepository<Entity extends ObjectLiteral, Model> {
 
   restoreSoftDeleted(
     id: string | FindOptionsWhere<Entity>,
-  ): Promise<Model | null>;
+  ): Promise<Model | undefined>;
 
   queryBuilder(alias: string): SelectQueryBuilder<Entity>;
 
@@ -186,11 +186,10 @@ export abstract class AbstractRepository<
   }
 
   /**
-   * Override this hook to map an Entity to its corresponding Model.
+   * Transformation/mapping function
    * Default implementation returns the entity as-is (assumes Entity implements Model).
    */
-  protected toModel(entity: Entity | null): Model | null {
-    if (!entity) return null;
+  protected toModel(entity: Entity | null): Model | undefined {
     return entity as unknown as Model;
   }
 
@@ -321,7 +320,7 @@ export abstract class AbstractRepository<
     relations?: FindOptionsRelations<Entity>;
     excludeId?: string;
     includeDeleted?: boolean;
-  }): Promise<Model | null> {
+  }): Promise<Model | undefined> {
     return this.execute(async () => {
       const entity = await this.collection.findOne({
         where: excludeId
@@ -352,10 +351,10 @@ export abstract class AbstractRepository<
     } = {
       includeDeleted: false,
     },
-  ): Promise<Model | null> {
+  ): Promise<Model | undefined> {
     return this.execute(async () => {
       if (id?.length === undefined || id?.length === 0 || id?.length === null) {
-        return null;
+        return undefined;
       }
 
       const entity = await this.collection.findOne({
@@ -381,7 +380,7 @@ export abstract class AbstractRepository<
     relations?: FindOptionsRelations<Entity>;
     excludeId?: string;
     includeDeleted?: boolean;
-  }): Promise<Model | null> {
+  }): Promise<Model | undefined> {
     return this.execute(async () => {
       const order: FindOptionsOrder<Entity> = {
         createdAt: 'DESC',
@@ -556,7 +555,7 @@ export abstract class AbstractRepository<
 
   async restoreSoftDeleted(
     id: string | FindOptionsWhere<Entity>,
-  ): Promise<Model | null> {
+  ): Promise<Model | undefined> {
     return this.execute(async () => {
       const entity = await this.collection.findOne({
         where: { id } as unknown as FindOptionsWhere<Entity>,

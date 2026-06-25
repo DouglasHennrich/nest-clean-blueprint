@@ -8,7 +8,7 @@ dotenv.config();
  * TypeORM DataSource for CLI migration commands.
  *
  * Usage:
- *   pnpm migration:create src/database/migrations/CreateOrdersTable
+ *   pnpm migration:create src/@database/migrations/CreateOrdersTable
  *   pnpm migration:run
  *   pnpm migration:revert
  */

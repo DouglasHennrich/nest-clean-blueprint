@@ -68,7 +68,7 @@ interface ICacheOptions {
 ```typescript
 constructor(private readonly cacheService: TDataCacheService) {}
 
-async findById(id: string): Promise<IOrderModel | null> {
+async findById(id: string): Promise<IOrderModel | undefined> {
   return this.cacheService.get(
     `order:${id}`,
     () => this.ordersRepository.findById(id), // called only on cache miss

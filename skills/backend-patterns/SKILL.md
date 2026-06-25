@@ -1,6 +1,6 @@
 ---
 name: backend-patterns
-description: "REQUIRED for any NestJS backend code. ALWAYS load before: creating a service, writing a controller, adding a repository, building a module, creating an entity, adding a presenter, writing a DTO, implementing a feature, modifying existing service/controller/repository/entity/presenter/DTO/module. Covers Result<T> pattern, DI tokens (TService/IRepository), AbstractService, Zod DTOs, constructor injection format (public logger / private readonly), validateDto, and modular file structure conventions."
+description: 'REQUIRED for any NestJS backend code. ALWAYS load before: creating a service, writing a controller, adding a repository, building a module, creating an entity, adding a presenter, writing a DTO, implementing a feature, modifying existing service/controller/repository/entity/presenter/DTO/module. Covers Result<T> pattern, DI tokens (TService/IRepository), AbstractService, Zod DTOs, constructor injection format (public logger / private readonly), validateDto, and modular file structure conventions.'
 ---
 
 # Backend Patterns — NestJS
@@ -88,26 +88,26 @@ export class CreateMyEntityService implements TCreateMyEntityService {
 ## Entity Pattern
 
 ```typescript
-@Entity("my-entities")
+@Entity('my-entities')
 export class MyEntity implements IMyEntityModel {
-  @PrimaryGeneratedColumn("uuid")
+  @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @CreateDateColumn({ name: "created_at" })
+  @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
-  @UpdateDateColumn({ name: "updated_at" })
+  @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 
-  @DeleteDateColumn({ name: "deleted_at", nullable: true })
+  @DeleteDateColumn({ name: 'deleted_at', nullable: true })
   deletedAt?: Date;
 
   // Relations use Model interfaces, not Entity classes
   @ManyToOne(() => OtherEntity)
-  @JoinColumn({ name: "other_entity_id" })
+  @JoinColumn({ name: 'other_entity_id' })
   otherEntity?: IOtherModel;
 
-  @Column({ name: "other_entity_id" })
+  @Column({ name: 'other_entity_id' })
   @Index()
   otherEntityId: string;
 }
@@ -126,9 +126,9 @@ export class MyEntity implements IMyEntityModel {
 ```typescript
 export abstract class IMyEntitiesRepository {
   abstract create(
-    data: Omit<IMyEntityModel, "id" | "createdAt" | "updatedAt">,
+    data: Omit<IMyEntityModel, 'id' | 'createdAt' | 'updatedAt'>,
   ): Promise<IMyEntityModel>;
-  abstract findById(id: string): Promise<IMyEntityModel | null>;
+  abstract findById(id: string): Promise<IMyEntityModel | undefined>;
   abstract list(filters: TListFilters): Promise<IMyEntityModel[]>;
   abstract update(
     id: string,
@@ -142,9 +142,9 @@ Use TypeORM operators directly — never MongoDB-style:
 
 ```typescript
 // ✅ CORRECT
-import { IsNull, Not, MoreThan, In, Between } from "typeorm";
+import { IsNull, Not, MoreThan, In, Between } from 'typeorm';
 await this.repo.findOne({
-  where: { deletedAt: IsNull(), status: Not("inactive") },
+  where: { deletedAt: IsNull(), status: Not('inactive') },
 });
 
 // ❌ WRONG
@@ -156,7 +156,7 @@ await this.repo.findOne({ where: { deletedAt: { $ne: null } } });
 ## DTO Validation with Zod
 
 ```typescript
-import { z } from "zod";
+import { z } from 'zod';
 
 export const createMyEntityDtoSchema = z.object({
   name: z.string().min(1),
@@ -171,7 +171,7 @@ export type TCreateMyEntityDtoSchema = z.infer<typeof createMyEntityDtoSchema>;
 ## Controller Pattern
 
 ```typescript
-@Controller("my-entities")
+@Controller('my-entities')
 export class CreateMyEntityController {
   constructor(private readonly service: TCreateMyEntityService) {}
 
@@ -210,7 +210,7 @@ const lockKey = `my-lock-${entityId}`;
 const lock = await this.distributedLockService.acquireLock(lockKey, {
   ttl: 30,
 });
-if (!lock) return Result.fail(new Error("Already processing"));
+if (!lock) return Result.fail(new Error('Already processing'));
 
 try {
   // ... critical section ...
@@ -273,8 +273,8 @@ Never log sensitive fields (passwords, tokens, base64 file content).
 
 ```typescript
 // Always use date-fns, never native Date methods
-import { isAfter, addHours, formatISO } from "date-fns";
-import { zonedTimeToUtc } from "date-fns-tz";
+import { isAfter, addHours, formatISO } from 'date-fns';
+import { zonedTimeToUtc } from 'date-fns-tz';
 
 const expiry = addHours(new Date(), 24);
 const isExpired = isAfter(new Date(), expiry);
