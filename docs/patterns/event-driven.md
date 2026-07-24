@@ -50,4 +50,4 @@ export class SendOrderConfirmationEmailListener
 - **Use events for side effects, not for the primary write path.** A list endpoint must not depend on an event listener returning data.
 - **Listeners are fire-and-forget.** Wrap retry logic inside the listener, not in the emitter.
 - **Always use `{ async: true }`** so listeners run on the next tick and don't block the emitter.
-- **Use AsyncContext.run inside the listener** if you spawn further async work that needs the Correlation ID — `EventEmitter2` does not propagate AsyncLocalStorage by default.
+- **Use `RequestContext.run` inside the listener** if you spawn further async work that needs the Correlation ID — `EventEmitter2` does not propagate `AsyncLocalStorage` by default.

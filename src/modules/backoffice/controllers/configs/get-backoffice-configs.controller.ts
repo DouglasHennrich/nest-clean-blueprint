@@ -1,29 +1,28 @@
-import { Controller, Get, HttpCode, HttpStatus } from '@nestjs/common';
-import { ReqContext } from '@/@decorators/request-context.decorator';
-import { IRequestContext } from '@/@shared/protocols/request-context.struct';
-import { AbstractApplicationException } from '@/@shared/errors/abstract-application-exception';
+import { Controller, Get, HttpCode, HttpStatus, UseGuards } from '@nestjs/common';
 
 import { TGetBackofficeConfigsService } from '../../services/configs/get-backoffice-configs.service';
 import { BackofficeToken } from '../../decorators/backoffice.decorator';
+import { BackofficeGuard } from '../../guards/backoffice.guard';
+import { IBackofficeConfigsPresenter } from '../../presenters/configs/backoffice-configs.presenter';
 
 @Controller('backoffice/configs')
+@UseGuards(BackofficeGuard)
 export class GetBackofficeConfigsController {
-  constructor(private getService: TGetBackofficeConfigsService) {}
+  constructor(
+    private getService: TGetBackofficeConfigsService,
+    private configsPresenter: IBackofficeConfigsPresenter,
+  ) {}
 
   @BackofficeToken()
   @Get()
   @HttpCode(HttpStatus.OK)
-  async getConfigs(@ReqContext() context: IRequestContext) {
-    const result = await this.getService.execute(undefined, context);
+  async getConfigs() {
+    const result = await this.getService.execute();
 
     if (result.error) {
-      if (result.error instanceof AbstractApplicationException) {
-        result.error.context = context;
-      }
-
       throw result.error;
     }
 
-    return result.getValue();
+    return this.configsPresenter.present({ entity: result.getValue()! });
   }
 }

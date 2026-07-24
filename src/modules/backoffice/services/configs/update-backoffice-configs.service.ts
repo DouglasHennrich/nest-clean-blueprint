@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Result } from '@/@shared/classes/result';
 import { AbstractService } from '@/@shared/classes/service';
-import { IRequestContext } from '@/@shared/protocols/request-context.struct';
 import { ILogger } from '@/@shared/classes/custom-logger';
 import {
   updateBackofficeConfigsDtoServiceSchema,
@@ -26,7 +25,6 @@ export class UpdateBackofficeConfigsService implements TUpdateBackofficeConfigsS
 
   async execute(
     serviceDto: TUpdateBackofficeConfigsDtoServiceSchema,
-    context?: IRequestContext,
   ): Promise<Result<IBackofficeConfigsModel>> {
     const validateDtoResult = this.validateDto(serviceDto);
 
@@ -36,14 +34,9 @@ export class UpdateBackofficeConfigsService implements TUpdateBackofficeConfigsS
 
     const validatedDto = validateDtoResult.getValue()!;
 
-    this.logger.debug(
-      `Updating backoffice configs: ${JSON.stringify(validatedDto)}`,
-      context,
-    );
+    this.logger.debug(`Updating backoffice configs: ${JSON.stringify(validatedDto)}`);
 
-    const updateResult = await this.backofficeConfigsService.updateConfigs(
-      validatedDto as IBackofficeConfigsModel,
-    );
+    const updateResult = await this.backofficeConfigsService.updateConfigs(validatedDto);
 
     if (updateResult.error) {
       return updateResult;
@@ -56,8 +49,7 @@ export class UpdateBackofficeConfigsService implements TUpdateBackofficeConfigsS
     serviceDto: TUpdateBackofficeConfigsDtoServiceSchema,
   ): Result<TUpdateBackofficeConfigsDtoServiceSchema> {
     try {
-      const validatedDto =
-        updateBackofficeConfigsDtoServiceSchema.parse(serviceDto);
+      const validatedDto = updateBackofficeConfigsDtoServiceSchema.parse(serviceDto);
 
       return Result.success(validatedDto);
     } catch (error) {

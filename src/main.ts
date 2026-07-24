@@ -6,17 +6,20 @@ import helmet from 'helmet';
 import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module';
+import { initSentry } from './@shared/observability/sentry';
 import { TEnvService } from './modules/env/services/env.service';
 import { AllExceptionsFilter } from './@shared/filters/exceptions.filter';
 import { VersioningType } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { CustomLogger } from './@shared/classes/custom-logger';
-import { RequestIdMiddleware } from './@shared/middlewares/request-id.middleware';
+import { RequestContextMiddleware } from './@shared/middlewares/request-context.middleware';
 import express, { NextFunction, Request, Response } from 'express';
 import { RequestLoggerMiddleware } from './@shared/middlewares/request-logger.middleware';
 import { CreateRequestLogEntityMiddleware } from './@shared/middlewares/create-request-log-entity.middleware';
 
 async function bootstrap() {
+  initSentry();
+
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     cors: {
       origin: '*', // Allow all origins, adjust as necessary for production
@@ -39,11 +42,11 @@ async function bootstrap() {
   );
 
   /// //////////////////////////
-  //  Request ID middleware (must be first)
+  //  Request Context middleware (must be first)
   /// //////////////////////////
-  const requestIdMiddleware = app.get(RequestIdMiddleware);
+  const requestContextMiddleware = app.get(RequestContextMiddleware);
   app.use((req: Request, res: Response, next: NextFunction) =>
-    requestIdMiddleware.use(req, res, next),
+    requestContextMiddleware.use(req, res, next),
   );
 
   /// //////////////////////////
@@ -69,9 +72,7 @@ async function bootstrap() {
   //  Request Log Entity middleware (only for non-GET methods)
   //  MUST be after body parser middlewares
   /// //////////////////////////
-  const createRequestLogEntityMiddleware = app.get(
-    CreateRequestLogEntityMiddleware,
-  );
+  const createRequestLogEntityMiddleware = app.get(CreateRequestLogEntityMiddleware);
   app.use((req: Request, res: Response, next: NextFunction) => {
     if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) {
       return createRequestLogEntityMiddleware.use(req, res, next);

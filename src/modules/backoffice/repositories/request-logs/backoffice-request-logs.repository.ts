@@ -8,7 +8,7 @@ import { TEnvService } from '@/modules/env/services/env.service';
 import { IBackofficeRequestLogModel } from '../../models/request-logs/backoffice-request-log.struct';
 import { BackofficeRequestLogEntity } from '../../entities/request-logs/backoffice-request-log.entity';
 
-export class IBackofficeRequestLogsRepository extends AbstractRepository<
+export abstract class IBackofficeRequestLogsRepository extends AbstractRepository<
   BackofficeRequestLogEntity,
   IBackofficeRequestLogModel
 > {}

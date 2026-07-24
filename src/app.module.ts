@@ -17,11 +17,12 @@ import { MailProviderModule } from './@shared/providers/mail-provider/mail-provi
 import { EncryptDecryptProviderModule } from './@shared/providers/encrypt-decrypt-provider/encrypt-decrypt-provider.module';
 import { UploadProviderModule } from './@shared/providers/upload-provider/upload-provider.module';
 
-import { RequestIdMiddleware } from './@shared/middlewares/request-id.middleware';
+import { RequestContextMiddleware } from './@shared/middlewares/request-context.middleware';
 import { RequestLoggerMiddleware } from './@shared/middlewares/request-logger.middleware';
 
 import { OrdersModule } from './modules/_example_orders/orders.module';
-import { AuditInterceptor } from './modules/backoffice/interceptors/backoffice-audit.interceptor';
+import { BackofficeModule } from './modules/backoffice/backoffice.module';
+import { BackofficeAuditInterceptor } from './modules/backoffice/interceptors/backoffice-audit.interceptor';
 import { ResponseLogInterceptor } from './@shared/interceptors/response-log.interceptor';
 import { CreateRequestLogEntityMiddleware } from './@shared/middlewares/create-request-log-entity.middleware';
 import { DatabaseModule } from './@database/database.module';
@@ -50,6 +51,7 @@ import { RequestLogHelper } from './@shared/helpers/request-log.helper';
     QueuesModule,
     CronjobsModule,
     OrdersModule,
+    BackofficeModule,
     HealthModule,
   ],
   providers: [
@@ -63,9 +65,9 @@ import { RequestLogHelper } from './@shared/helpers/request-log.helper';
     },
     {
       provide: APP_INTERCEPTOR,
-      useClass: AuditInterceptor,
+      useClass: BackofficeAuditInterceptor,
     },
-    RequestIdMiddleware,
+    RequestContextMiddleware,
     RequestLoggerMiddleware,
     CreateRequestLogEntityMiddleware,
     RequestLogHelper,

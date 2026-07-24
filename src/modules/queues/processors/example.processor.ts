@@ -2,7 +2,7 @@ import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Injectable } from '@nestjs/common';
 import { Job } from 'bullmq';
 import { ILogger } from '@/@shared/classes/custom-logger';
-import { IExampleJobData } from '../dto/example-job.dto';
+import { IExampleJobDataModel } from '../dto/example-job.dto';
 
 /**
  * ExampleProcessor
@@ -21,13 +21,14 @@ export class ExampleProcessor extends WorkerHost {
     this.logger.setContextName(ExampleProcessor.name);
   }
 
-  async process(job: Job<IExampleJobData>): Promise<void> {
+  async process(job: Job<IExampleJobDataModel>): Promise<void> {
     this.logger.log(`Processing job ${job.id}: entityId=${job.data.entityId}`);
 
     try {
       // TODO: inject your domain service and call it here
       // const result = await this.exampleService.execute(job.data);
       // if (result.error) throw result.error;
+      await Promise.resolve();
 
       this.logger.log(`Job ${job.id} completed`);
     } catch (error) {

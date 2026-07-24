@@ -1,0 +1,13 @@
+{
+  "name": "backend-reviewer-scripts",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "ts-morph": "^23.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^6.0.3"
+  }
+}

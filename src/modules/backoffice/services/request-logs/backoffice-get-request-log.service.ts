@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Result } from '@/@shared/classes/result';
 import { AbstractService } from '@/@shared/classes/service';
-import { IRequestContext } from '@/@shared/protocols/request-context.struct';
 import { ILogger } from '@/@shared/classes/custom-logger';
 import {
   backofficeGetRequestLogDtoServiceSchema,
@@ -34,7 +33,6 @@ export class BackofficeGetRequestLogService implements TBackofficeGetRequestLogS
 
   async execute(
     serviceDto: TBackofficeGetRequestLogDtoServiceSchema,
-    context?: IRequestContext,
   ): Promise<Result<IBackofficeRequestLogModel>> {
     const validateDtoResult = this.validateDto(serviceDto);
 
@@ -44,19 +42,14 @@ export class BackofficeGetRequestLogService implements TBackofficeGetRequestLogS
 
     const validatedDto = validateDtoResult.getValue()!;
 
-    this.logger.log(
-      `Getting request log: ${JSON.stringify(validatedDto)}`,
-      context,
-    );
+    this.logger.log(`Getting request log: ${JSON.stringify(validatedDto)}`);
 
-    const requestLog = await this.requestLogsRepository.findById(
-      validatedDto.id,
-    );
+    const requestLog = await this.requestLogsRepository.findById({
+      id: validatedDto.id,
+    });
 
     if (!requestLog) {
-      return Result.fail(
-        new BackofficeRequestLogNotFoundException(validatedDto.id, context),
-      );
+      return Result.fail(new BackofficeRequestLogNotFoundException(validatedDto.id));
     }
 
     return Result.success(requestLog);
@@ -66,8 +59,7 @@ export class BackofficeGetRequestLogService implements TBackofficeGetRequestLogS
     serviceDto: TBackofficeGetRequestLogDtoServiceSchema,
   ): Result<TBackofficeGetRequestLogDtoServiceSchema> {
     try {
-      const validatedDto =
-        backofficeGetRequestLogDtoServiceSchema.parse(serviceDto);
+      const validatedDto = backofficeGetRequestLogDtoServiceSchema.parse(serviceDto);
 
       return Result.success(validatedDto);
     } catch (error) {

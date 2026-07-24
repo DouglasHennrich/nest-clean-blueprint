@@ -1,9 +1,4 @@
-import {
-  CallHandler,
-  ExecutionContext,
-  Injectable,
-  NestInterceptor,
-} from '@nestjs/common';
+import { CallHandler, ExecutionContext, Injectable, NestInterceptor } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
 
@@ -12,20 +7,18 @@ const MUTATING_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 /**
  * ResponseLogInterceptor
  *
- * Captura um snapshot mínimo da resposta (somente id/ids) para mutating methods
- * e armazena em `req.__responseBody` como JSON string.
+ * Captures a minimal response snapshot (id/ids only) for mutating methods
+ * and stores it in `req.__responseBody` as a JSON string.
  *
- * O CreateRequestLogEntityMiddleware lê esse campo no evento `res.on('finish')`
- * e inclui no payload enviado ao Redis.
+ * CreateRequestLogEntityMiddleware reads this field on the `res.on('finish')`
+ * event and includes it in the payload sent to Redis.
  *
- * Não captura respostas de GET para evitar logar dados sensíveis em massa.
+ * Does not capture GET responses to avoid bulk-logging sensitive data.
  */
 @Injectable()
 export class ResponseLogInterceptor implements NestInterceptor {
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
-    const req = context
-      .switchToHttp()
-      .getRequest<Request & Record<string, unknown>>();
+    const req = context.switchToHttp().getRequest<Request & Record<string, unknown>>();
 
     const method = String((req as Record<string, unknown>)['method'] ?? '');
     if (!MUTATING_METHODS.has(method)) {
@@ -40,7 +33,7 @@ export class ResponseLogInterceptor implements NestInterceptor {
             (req as any).__responseBody = JSON.stringify(snapshot);
           }
         } catch {
-          // Nunca interromper a resposta por falha no log
+          // Never interrupt the response due to a logging failure
         }
       }),
     );
@@ -51,7 +44,7 @@ export class ResponseLogInterceptor implements NestInterceptor {
 
     const obj = body as Record<string, unknown>;
 
-    // Paginação: { data: [...] }
+    // Pagination: { data: [...] }
     if (Array.isArray(obj['data'])) {
       const ids = (obj['data'] as Record<string, unknown>[])
         .map((item) => item?.['id'])
@@ -61,9 +54,7 @@ export class ResponseLogInterceptor implements NestInterceptor {
 
     // Array direto
     if (Array.isArray(body)) {
-      const ids = (body as Record<string, unknown>[])
-        .map((item) => item?.['id'])
-        .filter(Boolean);
+      const ids = (body as Record<string, unknown>[]).map((item) => item?.['id']).filter(Boolean);
       return ids.length > 0 ? { ids } : null;
     }
 

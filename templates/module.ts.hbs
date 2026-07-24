@@ -12,12 +12,14 @@ import {
   {{Entity}}Presenter,
 } from './presenters/{{entity}}.presenter';
 
-// TODO: import services and controllers.
+// TODO: import one service + controller pair per action, e.g.:
+// import { Create{{Entity}}Service, TCreate{{Entity}}Service } from './services/create-{{entity}}.service';
+// import { Create{{Entity}}Controller } from './controllers/create-{{entity}}.controller';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([{{Entity}}Entity])],
+  imports: [TypeOrmModule.forFeature([{{Entity}}Entity]), EnvModule],
   controllers: [
-    // TODO: register one controller per action.
+    // TODO: register one controller per action, e.g. Create{{Entity}}Controller.
   ],
   providers: [
     { provide: I{{EntitiesPlural}}Repository, useClass: {{EntitiesPlural}}Repository },

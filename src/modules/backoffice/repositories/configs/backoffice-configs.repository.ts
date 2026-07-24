@@ -7,7 +7,7 @@ import { TEnvService } from '@/modules/env/services/env.service';
 import { CustomLogger } from '@/@shared/classes/custom-logger';
 import { BackofficeConfigsEntity } from '../../entities/configs/backoffice-configs.entity';
 
-export class IBackofficeConfigsRepository extends AbstractRepository<
+export abstract class IBackofficeConfigsRepository extends AbstractRepository<
   BackofficeConfigsEntity,
   IBackofficeConfigsModel
 > {}

@@ -2,16 +2,15 @@ import { Injectable } from '@nestjs/common';
 import { AbstractService } from '@/@shared/classes/service';
 import { Result } from '@/@shared/classes/result';
 import { ILogger } from '@/@shared/classes/custom-logger';
-import { IRequestContext } from '@/@shared/protocols/request-context.struct';
-import { IPagination } from '@/@shared/classes/repository';
+import { IPaginationModel } from '@/@shared/classes/repository';
 import { TEnvService } from '@/modules/env/services/env.service';
 import { IOrdersRepository } from '../repositories/orders.repository';
-import { IOrderModel } from '../models/order.model';
-import { TListOrdersDtoServiceSchema } from '../dto/order.dto';
+import { IOrderModel } from '../models/order.struct';
+import { listOrdersDtoSchema, TListOrdersDto } from '../dto/list-orders.dto';
 
 export abstract class TListOrdersService extends AbstractService<
-  TListOrdersDtoServiceSchema,
-  IPagination<IOrderModel>
+  TListOrdersDto,
+  IPaginationModel<IOrderModel>
 > {}
 
 @Injectable()
@@ -35,11 +34,12 @@ export class ListOrdersService implements TListOrdersService {
     this.logger.setContextName(ListOrdersService.name);
   }
 
-  async execute(
-    { page, offset, status }: TListOrdersDtoServiceSchema,
-    context?: IRequestContext,
-  ): Promise<Result<IPagination<IOrderModel>>> {
-    this.logger.log(`Listing orders (page=${page}, status=${status})`, context);
+  async execute(dto: TListOrdersDto): Promise<Result<IPaginationModel<IOrderModel>>> {
+    const invalid = AbstractService.validateDto(listOrdersDtoSchema, dto);
+    if (invalid) return Result.fail(invalid.error!);
+
+    const { page, offset, status } = dto;
+    this.logger.log(`Listing orders (page=${page}, status=${status})`);
 
     const where = status ? { status } : undefined;
     const result = await this.ordersRepository.find({

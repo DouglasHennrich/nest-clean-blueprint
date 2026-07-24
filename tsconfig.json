@@ -25,5 +25,5 @@
     },
     "types": ["jest", "node"]
   },
-  "exclude": ["node_modules", "test", "dist", "mcp-server"]
+  "exclude": ["node_modules", "test", "dist", "mcp-server", "skills", ".claude"]
 }

@@ -4,6 +4,9 @@ FROM node:22-alpine AS dependencies
 # Install pnpm globally
 RUN npm install -g pnpm@11.0.8
 
+# Build tools required for native modules (e.g. argon2) to compile on Alpine/musl
+RUN apk add --no-cache python3 make g++
+
 WORKDIR /app
 
 # Copy only package files for better cache
@@ -25,9 +28,13 @@ RUN pnpm run build
 # Production stage
 FROM node:22-alpine AS production
 
-# Install minimal runtime dependencies
+# Install minimal runtime dependencies plus build tools required for native
+# modules (e.g. argon2) to compile on Alpine/musl during the prod install
 RUN apk add --no-cache \
-  dumb-init
+  dumb-init \
+  python3 \
+  make \
+  g++
 
 # Install pnpm
 RUN npm install -g pnpm@11.0.8

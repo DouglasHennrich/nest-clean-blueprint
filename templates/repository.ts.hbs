@@ -5,8 +5,11 @@ import { AbstractRepository } from '@/@shared/classes/repository';
 import { ILogger, CustomLogger } from '@/@shared/classes/custom-logger';
 import { TEnvService } from '@/modules/env/services/env.service';
 import { {{Entity}}Entity } from '../entities/{{entity}}.entity';
-import { I{{Entity}}Model } from '../models/{{entity}}.model';
+import { I{{Entity}}Model } from '../models/{{entity}}.struct';
 
+/**
+ * I{{EntitiesPlural}}Repository — DI token (extends AbstractRepository so it doubles as the type).
+ */
 export abstract class I{{EntitiesPlural}}Repository extends AbstractRepository<
   {{Entity}}Entity,
   I{{Entity}}Model
@@ -19,6 +22,7 @@ export class {{EntitiesPlural}}Repository extends I{{EntitiesPlural}}Repository 
     repository: Repository<{{Entity}}Entity>,
     envService: TEnvService,
   ) {
-    super(repository, envService, new CustomLogger(envService, {{EntitiesPlural}}Repository.name),);
+    const logger: ILogger = new CustomLogger(envService, {{EntitiesPlural}}Repository.name);
+    super(repository, envService, logger);
   }
 }

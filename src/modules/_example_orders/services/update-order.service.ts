@@ -2,14 +2,13 @@ import { Injectable } from '@nestjs/common';
 import { AbstractService } from '@/@shared/classes/service';
 import { Result } from '@/@shared/classes/result';
 import { ILogger } from '@/@shared/classes/custom-logger';
-import { IRequestContext } from '@/@shared/protocols/request-context.struct';
 import { IOrdersRepository } from '../repositories/orders.repository';
-import { IOrderModel } from '../models/order.model';
-import { OrderNotFoundException } from '../errors/order.errors';
-import { TUpdateOrderDtoServiceSchema } from '../dto/order.dto';
+import { IOrderModel } from '../models/order.struct';
+import { OrderNotFoundException } from '../errors/order-not-found.exception';
+import { updateOrderServiceDtoSchema, TUpdateOrderServiceDto } from '../dto/update-order.dto';
 
 export abstract class TUpdateOrderService extends AbstractService<
-  TUpdateOrderDtoServiceSchema,
+  TUpdateOrderServiceDto,
   IOrderModel
 > {}
 
@@ -29,18 +28,19 @@ export class UpdateOrderService implements TUpdateOrderService {
     this.logger.setContextName(UpdateOrderService.name);
   }
 
-  async execute(
-    { id, ...changes }: TUpdateOrderDtoServiceSchema,
-    context?: IRequestContext,
-  ): Promise<Result<IOrderModel>> {
-    this.logger.log(`Updating order ${id}`, context);
+  async execute(dto: TUpdateOrderServiceDto): Promise<Result<IOrderModel>> {
+    const invalid = AbstractService.validateDto(updateOrderServiceDtoSchema, dto);
+    if (invalid) return Result.fail(invalid.error!);
 
-    const existing = await this.ordersRepository.findById(id);
+    const { id, ...changes } = dto;
+    this.logger.log(`Updating order ${id}`);
+
+    const existing = await this.ordersRepository.findById({ id });
     if (!existing) {
-      return Result.fail(new OrderNotFoundException(id, context));
+      return Result.fail(new OrderNotFoundException(id));
     }
 
-    const updated = await this.ordersRepository.update(id, changes);
+    const updated = await this.ordersRepository.update({ id, data: changes });
     return Result.success(updated);
   }
 }

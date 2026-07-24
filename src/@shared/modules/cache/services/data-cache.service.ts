@@ -3,11 +3,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { Cache } from 'cache-manager';
 import { ILogger } from '@/@shared/classes/custom-logger';
 import { Result } from '@/@shared/classes/result';
-import {
-  DEFAULT_CACHE_OPTIONS,
-  ICacheOptions,
-  TAbstractCache,
-} from '../models/cache.struct';
+import { DEFAULT_CACHE_OPTIONS, ICacheOptionsModel, TAbstractCache } from '../models/cache.struct';
 
 /**
  * TDataCacheService — DI token for JSON data caching.
@@ -29,7 +25,7 @@ export class DataCacheService implements TDataCacheService {
   async get<T>(
     key: string,
     fetchFn: () => Promise<Result<T>>,
-    options: ICacheOptions = DEFAULT_CACHE_OPTIONS,
+    options: ICacheOptionsModel = DEFAULT_CACHE_OPTIONS,
   ): Promise<Result<T>> {
     try {
       const cached = await this.cacheManager.get<T>(key);
@@ -41,15 +37,12 @@ export class DataCacheService implements TDataCacheService {
       if (result.error) return result;
 
       const data = result.getValue()!;
-      const ttl =
-        options.shouldExpire === false ? undefined : (options.ttl ?? 3600);
+      const ttl = options.shouldExpire === false ? undefined : (options.ttl ?? 3600);
       await this.cacheManager.set(key, data, ttl);
       return Result.success(data);
     } catch (err) {
       // Redis unavailable → fall through to data source (graceful degradation)
-      this.logger.warn(
-        `Cache miss (Redis error) for key "${key}": ${(err as Error).message}`,
-      );
+      this.logger.warn(`Cache miss (Redis error) for key "${key}": ${(err as Error).message}`);
       return fetchFn();
     }
   }
@@ -57,16 +50,13 @@ export class DataCacheService implements TDataCacheService {
   async set<T>(
     key: string,
     value: T,
-    options: ICacheOptions = DEFAULT_CACHE_OPTIONS,
+    options: ICacheOptionsModel = DEFAULT_CACHE_OPTIONS,
   ): Promise<void> {
     try {
-      const ttl =
-        options.shouldExpire === false ? undefined : (options.ttl ?? 3600);
+      const ttl = options.shouldExpire === false ? undefined : (options.ttl ?? 3600);
       await this.cacheManager.set(key, value, ttl);
     } catch (err) {
-      this.logger.warn(
-        `Cache set failed for key "${key}": ${(err as Error).message}`,
-      );
+      this.logger.warn(`Cache set failed for key "${key}": ${(err as Error).message}`);
     }
   }
 
@@ -79,17 +69,11 @@ export class DataCacheService implements TDataCacheService {
     }
   }
 
-  async setSimple<T>(
-    key: string,
-    value: T,
-    ttlSeconds?: number,
-  ): Promise<void> {
+  async setSimple<T>(key: string, value: T, ttlSeconds?: number): Promise<void> {
     try {
       await this.cacheManager.set(key, value, ttlSeconds);
     } catch (err) {
-      this.logger.warn(
-        `Cache setSimple failed for key "${key}": ${(err as Error).message}`,
-      );
+      this.logger.warn(`Cache setSimple failed for key "${key}": ${(err as Error).message}`);
     }
   }
 
@@ -97,9 +81,7 @@ export class DataCacheService implements TDataCacheService {
     try {
       await this.cacheManager.del(key);
     } catch (err) {
-      this.logger.warn(
-        `Cache delete failed for key "${key}": ${(err as Error).message}`,
-      );
+      this.logger.warn(`Cache delete failed for key "${key}": ${(err as Error).message}`);
     }
   }
 

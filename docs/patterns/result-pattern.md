@@ -21,26 +21,29 @@ result.getValue()     // T | null
 ## Example
 
 ```typescript
-async execute(dto, context?): Promise<Result<IOrderModel>> {
-  const order = await this.ordersRepository.findById(dto.id);
-  if (!order) return Result.fail(new OrderNotFoundException(dto.id, context));
+async execute(dto: TGetOrderDto): Promise<Result<IOrderModel>> {
+  const order = await this.ordersRepository.findById({ id: dto.id });
+  if (!order) return Result.fail(new OrderNotFoundException(dto.id));
   return Result.success(order);
 }
 ```
 
+Note there is no `context` parameter anywhere in this chain. `AbstractApplicationException`
+reads `RequestContext.getContext()` itself in its constructor (see
+[docs/patterns/request-context.md](./request-context.md)) — services and exceptions never
+receive or forward context explicitly.
+
 ## Controller boundary
 
-Controllers are the ONLY place that converts `Result.fail` into thrown exceptions:
+Controllers are the ONLY place that converts `Result.fail` into thrown exceptions — and the
+only layer that calls the presenter:
 
 ```typescript
-const result = await this.service.execute(dto, context);
+const result = await this.getOrderService.execute(dto);
 if (result.error) {
-  if (result.error instanceof AbstractApplicationException) {
-    result.error.context = context;
-  }
   throw result.error;
 }
-return this.presenter.present(result.getValue()!);
+return this.orderPresenter.present({ entity: result.getValue()! });
 ```
 
 ## Anti-patterns
@@ -50,11 +53,10 @@ return this.presenter.present(result.getValue()!);
 async execute() { throw new NotFoundException(); }
 
 // ❌ Service uses presenter
-async execute(): Promise<Result<TOrderResponse>> {
-  return Result.success(this.presenter.present(order));
+async execute(): Promise<Result<IOrderPresenterResponseModel>> {
+  return Result.success(this.presenter.present({ entity: order }));
 }
 
-// ❌ Controller forgets to attach context
-const result = await this.service.execute(dto);
-if (result.error) throw result.error; // missing context attach
+// ❌ Passing context explicitly — RequestContext is read internally
+async execute(dto, context) { /* … */ }
 ```

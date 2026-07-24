@@ -1,8 +1,7 @@
-import { Injectable } from '@nestjs/common';
 import { AbstractPresenter } from '@/@shared/classes/presenter';
-import { I{{Entity}}Model } from '../models/{{entity}}.model';
+import { I{{Entity}}Model } from '../models/{{entity}}.struct';
 
-export interface I{{Entity}}PresenterResponse {
+export interface I{{Entity}}PresenterResponseModel {
   id: string;
   // TODO: add fields exposed by the API.
   createdAt: string;
@@ -11,24 +10,23 @@ export interface I{{Entity}}PresenterResponse {
 
 export abstract class I{{Entity}}Presenter extends AbstractPresenter<
   I{{Entity}}Model,
-  I{{Entity}}PresenterResponse
+  I{{Entity}}PresenterResponseModel
 > {}
 
-@Injectable()
-export class {{Entity}}Presenter implements I{{Entity}}Presenter {
-  present(entity: I{{Entity}}Model): I{{Entity}}PresenterResponse {
+// No @Injectable(): presenters are wired via `{ provide, useClass }` in the module.
+// presentWithoutRelations()/presentMany() come from AbstractPresenter — only
+// override them if this presenter needs custom behavior for those cases.
+export class {{Entity}}Presenter extends I{{Entity}}Presenter {
+  present({
+    entity,
+  }: {
+    entity: I{{Entity}}Model;
+    options?: any;
+  }): I{{Entity}}PresenterResponseModel {
     return {
       id: entity.id,
       createdAt: entity.createdAt.toISOString(),
       updatedAt: entity.updatedAt.toISOString(),
     };
-  }
-
-  presentWithoutRelations(entity: I{{Entity}}Model): I{{Entity}}PresenterResponse {
-    return this.present(entity);
-  }
-
-  presentMany(entities: I{{Entity}}Model[]): I{{Entity}}PresenterResponse[] {
-    return entities.map((e) => this.present(e));
   }
 }

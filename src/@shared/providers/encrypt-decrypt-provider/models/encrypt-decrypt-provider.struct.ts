@@ -1,11 +1,10 @@
-export interface IEncryptDecryptProviderOptions {
+export interface IEncryptDecryptProviderOptionsModel {
   algorithm: string;
   encryptionKey: string;
   iv: string;
 }
 
-export const ENCRYPT_DECRYPT_PROVIDER_OPTIONS =
-  'ENCRYPT_DECRYPT_PROVIDER_OPTIONS';
+export const ENCRYPT_DECRYPT_PROVIDER_OPTIONS = 'ENCRYPT_DECRYPT_PROVIDER_OPTIONS';
 
 /**
  * TEncryptDecryptProvider

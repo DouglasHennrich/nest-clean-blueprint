@@ -1,6 +1,6 @@
 # Module structure
 
-Every domain module mirrors the same layout. The exact folders are mandatory — even when empty initially — so contributors find code in predictable places.
+Every domain module mirrors the same layout. The exact folders are mandatory — even when empty initially — so contributors find code in predictable places. `src/modules/_example_orders/` is the canonical, fully wired reference instance — copy its shape rather than inventing a new one.
 
 ```
 orders/
@@ -10,19 +10,24 @@ orders/
 │   ├── list-orders.controller.ts
 │   ├── update-order.controller.ts
 │   └── delete-order.controller.ts
-├── dto/                 Zod schemas + inferred types
-│   └── order.dto.ts
-├── entities/            TypeORM @Entity classes
+├── dto/                 one Zod schema + inferred type PER ACTION, each with a .spec.ts
+│   ├── create-order.dto.ts
+│   ├── get-order.dto.ts
+│   ├── list-orders.dto.ts
+│   ├── update-order.dto.ts
+│   └── delete-order.dto.ts
+├── entities/            TypeORM @Entity classes, extend BaseEntity
 │   └── order.entity.ts
 ├── enums/
 │   └── order-status.enum.ts
-├── errors/              custom exceptions extending AbstractApplicationException
-│   └── order.errors.ts
-├── models/              I<Entity>Model interfaces (the domain contract)
-│   └── order.model.ts
-├── presenters/          response shape transformers
+├── errors/              ONE exception class PER FILE, extending AbstractApplicationException
+│   ├── order-not-found.exception.ts
+│   └── order-already-cancelled.exception.ts
+├── models/              I<Entity>Model interfaces — file named `[entity].struct.ts` (not `.model.ts`)
+│   └── order.struct.ts
+├── presenters/          response shape transformers — abstract token + useClass, no @Injectable
 │   └── order.presenter.ts
-├── repositories/        extends AbstractRepository<Entity, Model>
+├── repositories/        abstract token extends AbstractRepository<Entity, Model>
 │   └── orders.repository.ts
 ├── services/            one class per action
 │   ├── create-order.service.ts

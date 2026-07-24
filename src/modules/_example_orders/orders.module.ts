@@ -3,32 +3,14 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { EnvModule } from '@/modules/env/env.module';
 
 import { OrderEntity } from './entities/order.entity';
-import {
-  IOrdersRepository,
-  OrdersRepository,
-} from './repositories/orders.repository';
+import { IOrdersRepository, OrdersRepository } from './repositories/orders.repository';
 import { IOrderPresenter, OrderPresenter } from './presenters/order.presenter';
 
-import {
-  CreateOrderService,
-  TCreateOrderService,
-} from './services/create-order.service';
-import {
-  GetOrderService,
-  TGetOrderService,
-} from './services/get-order.service';
-import {
-  ListOrdersService,
-  TListOrdersService,
-} from './services/list-orders.service';
-import {
-  UpdateOrderService,
-  TUpdateOrderService,
-} from './services/update-order.service';
-import {
-  DeleteOrderService,
-  TDeleteOrderService,
-} from './services/delete-order.service';
+import { CreateOrderService, TCreateOrderService } from './services/create-order.service';
+import { GetOrderService, TGetOrderService } from './services/get-order.service';
+import { ListOrdersService, TListOrdersService } from './services/list-orders.service';
+import { UpdateOrderService, TUpdateOrderService } from './services/update-order.service';
+import { DeleteOrderService, TDeleteOrderService } from './services/delete-order.service';
 
 import { CreateOrderController } from './controllers/create-order.controller';
 import { GetOrderController } from './controllers/get-order.controller';

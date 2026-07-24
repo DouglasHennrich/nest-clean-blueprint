@@ -11,8 +11,7 @@ async function fetchImageAsBase64(url: string): Promise<string | null> {
       timeout: 10000,
     });
 
-    const contentType =
-      (response.headers['content-type'] as string | undefined) ?? 'image/png';
+    const contentType = (response.headers['content-type'] as string | undefined) ?? 'image/png';
     const mimeType = contentType.split(';')[0].trim();
 
     const base64 = Buffer.from(response.data).toString('base64');
@@ -56,9 +55,7 @@ export async function convertHtmlImagesToBase64(html: string): Promise<string> {
   }
 
   // Fetch all images in parallel
-  const base64Values = await Promise.all(
-    matches.map(({ url }) => fetchImageAsBase64(url)),
-  );
+  const base64Values = await Promise.all(matches.map(({ url }) => fetchImageAsBase64(url)));
 
   let result = html;
 

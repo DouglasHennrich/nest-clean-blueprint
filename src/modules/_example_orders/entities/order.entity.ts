@@ -1,20 +1,10 @@
-import {
-  Column,
-  CreateDateColumn,
-  DeleteDateColumn,
-  Entity,
-  Index,
-  PrimaryGeneratedColumn,
-  UpdateDateColumn,
-} from 'typeorm';
-import { IOrderModel } from '../models/order.model';
+import { Column, Entity, Index } from 'typeorm';
+import { BaseEntity } from '@/@shared/entities/base.entity';
+import { IOrderModel } from '../models/order.struct';
 import { OrderStatusEnum } from '../enums/order-status.enum';
 
 @Entity({ name: 'orders' })
-export class OrderEntity implements IOrderModel {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
-
+export class OrderEntity extends BaseEntity implements IOrderModel {
   @Index({ unique: true })
   @Column({ type: 'varchar', length: 32 })
   code: string;
@@ -29,13 +19,4 @@ export class OrderEntity implements IOrderModel {
   @Index()
   @Column({ type: 'varchar', length: 32, default: OrderStatusEnum.PENDING })
   status: OrderStatusEnum;
-
-  @CreateDateColumn({ name: 'created_at' })
-  createdAt: Date;
-
-  @UpdateDateColumn({ name: 'updated_at' })
-  updatedAt: Date;
-
-  @DeleteDateColumn({ name: 'deleted_at' })
-  deletedAt?: Date | null;
 }

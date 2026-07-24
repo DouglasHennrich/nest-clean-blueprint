@@ -10,7 +10,7 @@ import { TEnvService } from '@/modules/env/services/env.service';
 export const REQUEST_LOG_REDIS_CLIENT = 'REQUEST_LOG_REDIS_CLIENT';
 export const REQUEST_LOG_REDIS_LIST_KEY = 'pitanga:request-logs:pending';
 
-export interface IRequestLogPayload {
+export interface IRequestLogPayloadModel {
   method: string;
   path: string;
   userId?: string;
@@ -35,7 +35,7 @@ export interface IRequestLogPayload {
 }
 
 export abstract class TRequestLogFlushSchedulerService {
-  abstract enqueue(payload: IRequestLogPayload): Promise<void>;
+  abstract enqueue(payload: IRequestLogPayloadModel): Promise<void>;
   abstract triggerManualFlush(): Promise<Result<void>>;
 }
 
@@ -61,22 +61,20 @@ export class RequestLogFlushSchedulerService implements TRequestLogFlushSchedule
     this.logger.setContextName(RequestLogFlushSchedulerService.name);
   }
 
-  async enqueue(payload: IRequestLogPayload): Promise<void> {
-    // try {
-    //   const serialized = JSON.stringify(payload);
-    //   await this.redisClient.rpush(REQUEST_LOG_REDIS_LIST_KEY, serialized);
-    //   const listLength = await this.redisClient.llen(
-    //     REQUEST_LOG_REDIS_LIST_KEY,
-    //   );
-    //   const batchSize = this.envService.get('QUEUE_REQUEST_LOGS_BATCH_SIZE');
-    //   if (listLength >= batchSize) {
-    //     await this.triggerFlushJob();
-    //   }
-    // } catch (error) {
-    //   this.logger.error(
-    //     `Failed to enqueue request log: ${(error as Error).message}`,
-    //   );
-    // }
+  async enqueue(payload: IRequestLogPayloadModel): Promise<void> {
+    try {
+      const serialized = JSON.stringify(payload);
+      await this.redisClient.rpush(REQUEST_LOG_REDIS_LIST_KEY, serialized);
+
+      const listLength = await this.redisClient.llen(REQUEST_LOG_REDIS_LIST_KEY);
+      const batchSize = this.envService.get('QUEUE_REQUEST_LOGS_BATCH_SIZE');
+
+      if (listLength >= batchSize) {
+        await this.triggerFlushJob();
+      }
+    } catch (error) {
+      this.logger.error(`Failed to enqueue request log: ${(error as Error).message}`);
+    }
   }
 
   async triggerManualFlush(): Promise<Result<void>> {
@@ -84,9 +82,7 @@ export class RequestLogFlushSchedulerService implements TRequestLogFlushSchedule
       await this.triggerFlushJob();
       return Result.success();
     } catch (error) {
-      this.logger.error(
-        `Failed to trigger manual flush: ${(error as Error).message}`,
-      );
+      this.logger.error(`Failed to trigger manual flush: ${(error as Error).message}`);
       return Result.fail(error as Error);
     }
   }
@@ -94,9 +90,7 @@ export class RequestLogFlushSchedulerService implements TRequestLogFlushSchedule
   @Cron(CronExpression.EVERY_MINUTE)
   async scheduledFlush(): Promise<void> {
     try {
-      const listLength = await this.redisClient.llen(
-        REQUEST_LOG_REDIS_LIST_KEY,
-      );
+      const listLength = await this.redisClient.llen(REQUEST_LOG_REDIS_LIST_KEY);
 
       if (listLength > 0) {
         await this.triggerFlushJob();

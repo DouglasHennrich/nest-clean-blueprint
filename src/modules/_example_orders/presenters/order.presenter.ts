@@ -1,8 +1,7 @@
-import { Injectable } from '@nestjs/common';
 import { AbstractPresenter } from '@/@shared/classes/presenter';
-import { IOrderModel } from '../models/order.model';
+import { IOrderModel } from '../models/order.struct';
 
-export interface IOrderPresenterResponse {
+export interface IOrderPresenterResponseModel {
   id: string;
   code: string;
   customerName: string;
@@ -14,12 +13,11 @@ export interface IOrderPresenterResponse {
 
 export abstract class IOrderPresenter extends AbstractPresenter<
   IOrderModel,
-  IOrderPresenterResponse
+  IOrderPresenterResponseModel
 > {}
 
-@Injectable()
-export class OrderPresenter implements IOrderPresenter {
-  present(entity: IOrderModel): IOrderPresenterResponse {
+export class OrderPresenter extends IOrderPresenter {
+  present({ entity }: { entity: IOrderModel; options?: any }): IOrderPresenterResponseModel {
     return {
       id: entity.id,
       code: entity.code,
@@ -29,13 +27,5 @@ export class OrderPresenter implements IOrderPresenter {
       createdAt: entity.createdAt.toISOString(),
       updatedAt: entity.updatedAt.toISOString(),
     };
-  }
-
-  presentWithoutRelations(entity: IOrderModel): IOrderPresenterResponse {
-    return this.present(entity);
-  }
-
-  presentMany(entities: IOrderModel[]): IOrderPresenterResponse[] {
-    return entities.map((e) => this.present(e));
   }
 }

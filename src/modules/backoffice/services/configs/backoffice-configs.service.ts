@@ -15,9 +15,7 @@ export abstract class TBackofficeConfigsService {
 }
 
 @Injectable()
-export class BackofficeConfigsService
-  implements TBackofficeConfigsService, OnModuleInit
-{
+export class BackofficeConfigsService implements TBackofficeConfigsService, OnModuleInit {
   private readonly CACHE_KEY = 'backoffice-configs';
 
   constructor(
@@ -36,9 +34,7 @@ export class BackofficeConfigsService
 
       this.logger.log('BackofficeConfigs singleton initialized successfully');
     } catch (error) {
-      this.logger.error(
-        `Failed to initialize BackofficeConfigs singleton: ${error}`,
-      );
+      this.logger.error(`Failed to initialize BackofficeConfigs singleton: ${error}`);
 
       throw error; // Re-throw to prevent app startup if initialization fails
     }
@@ -56,7 +52,9 @@ export class BackofficeConfigsService
           if (!config) {
             // Create default config if not exists
             const defaultConfig = await this.repository.create({
-              debugLogging: false,
+              data: {
+                debugLogging: false,
+              },
             });
 
             this.logger.debug('Created default backoffice config');
@@ -66,10 +64,10 @@ export class BackofficeConfigsService
 
           return Result.success(config);
         },
-        { shouldExpire: false }, // Configuração não expira
+        { shouldExpire: false }, // Config does not expire
       )
       .then((result) => {
-        // Atualizar singleton para debug logging
+        // Update singleton for debug logging
         if (!result.error) {
           const config = result.getValue();
 
@@ -96,15 +94,13 @@ export class BackofficeConfigsService
       const currentConfig = getResult.getValue()!;
 
       // Update in database
-      const updatedConfig = await this.repository.update(
-        currentConfig.id,
-        updates,
-      );
+      const updatedConfig = await this.repository.update({
+        id: currentConfig.id,
+        data: updates,
+      });
 
       if (!updatedConfig) {
-        return Result.fail(
-          new DefaultException('Failed to update backoffice configs'),
-        );
+        return Result.fail(new DefaultException('Failed to update backoffice configs'));
       }
 
       // Update cache directly instead of invalidating it

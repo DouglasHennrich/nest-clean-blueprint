@@ -4,8 +4,9 @@ export const backofficeGetRequestLogDtoParamSchema = z.object({
   id: z.string().uuid(),
 });
 
-export const backofficeGetRequestLogDtoServiceSchema =
-  backofficeGetRequestLogDtoParamSchema.extend({});
+export const backofficeGetRequestLogDtoServiceSchema = backofficeGetRequestLogDtoParamSchema.extend(
+  {},
+);
 
 export type TBackofficeGetRequestLogDtoParamSchema = z.infer<
   typeof backofficeGetRequestLogDtoParamSchema

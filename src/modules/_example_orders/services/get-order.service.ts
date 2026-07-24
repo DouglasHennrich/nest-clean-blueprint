@@ -2,16 +2,12 @@ import { Injectable } from '@nestjs/common';
 import { AbstractService } from '@/@shared/classes/service';
 import { Result } from '@/@shared/classes/result';
 import { ILogger } from '@/@shared/classes/custom-logger';
-import { IRequestContext } from '@/@shared/protocols/request-context.struct';
 import { IOrdersRepository } from '../repositories/orders.repository';
-import { IOrderModel } from '../models/order.model';
-import { OrderNotFoundException } from '../errors/order.errors';
-import { TGetOrderDtoParamSchema } from '../dto/order.dto';
+import { IOrderModel } from '../models/order.struct';
+import { OrderNotFoundException } from '../errors/order-not-found.exception';
+import { getOrderDtoSchema, TGetOrderDto } from '../dto/get-order.dto';
 
-export abstract class TGetOrderService extends AbstractService<
-  TGetOrderDtoParamSchema,
-  IOrderModel
-> {}
+export abstract class TGetOrderService extends AbstractService<TGetOrderDto, IOrderModel> {}
 
 @Injectable()
 export class GetOrderService implements TGetOrderService {
@@ -29,15 +25,16 @@ export class GetOrderService implements TGetOrderService {
     this.logger.setContextName(GetOrderService.name);
   }
 
-  async execute(
-    { id }: TGetOrderDtoParamSchema,
-    context?: IRequestContext,
-  ): Promise<Result<IOrderModel>> {
-    this.logger.log(`Fetching order ${id}`, context);
+  async execute(dto: TGetOrderDto): Promise<Result<IOrderModel>> {
+    const invalid = AbstractService.validateDto(getOrderDtoSchema, dto);
+    if (invalid) return Result.fail(invalid.error!);
 
-    const order = await this.ordersRepository.findById(id);
+    const { id } = dto;
+    this.logger.log(`Fetching order ${id}`);
+
+    const order = await this.ordersRepository.findById({ id });
     if (!order) {
-      return Result.fail(new OrderNotFoundException(id, context));
+      return Result.fail(new OrderNotFoundException(id));
     }
     return Result.success(order);
   }

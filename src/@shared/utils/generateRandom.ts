@@ -7,15 +7,12 @@ export class GenerateRandom {
   }
 
   static text(length = 16): string {
-    const characters =
-      'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789.-';
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789.-';
 
     let generatedId = '';
 
     for (let i = 0; i <= length; i += 1) {
-      const randomCharacterIndex = Math.floor(
-        Math.random() * characters.length,
-      );
+      const randomCharacterIndex = Math.floor(Math.random() * characters.length);
       const randomCharacter = characters[randomCharacterIndex];
       generatedId += randomCharacter;
     }
@@ -29,9 +26,7 @@ export class GenerateRandom {
     let generatedId = '';
 
     for (let i = 0; i < length; i++) {
-      const randomCharacterIndex = Math.floor(
-        Math.random() * characters.length,
-      );
+      const randomCharacterIndex = Math.floor(Math.random() * characters.length);
       const randomCharacter = characters[randomCharacterIndex];
       generatedId += randomCharacter;
     }
@@ -46,12 +41,12 @@ export class GenerateRandom {
   }
 
   static hexColor(): string {
-    // Gera cores mais fechadas e pastéis reduzindo a saturação e ajustando o brilho
-    const hue = Math.floor(Math.random() * 360); // Matiz completa (0-360)
-    const saturation = Math.floor(Math.random() * 30) + 20; // Saturação baixa (20-50%)
-    const lightness = Math.floor(Math.random() * 30) + 40; // Luminosidade média-alta (40-70%)
+    // Generates more muted, pastel colors by reducing saturation and adjusting brightness
+    const hue = Math.floor(Math.random() * 360); // Full hue range (0-360)
+    const saturation = Math.floor(Math.random() * 30) + 20; // Low saturation (20-50%)
+    const lightness = Math.floor(Math.random() * 30) + 40; // Medium-high lightness (40-70%)
 
-    // Converte HSL para RGB
+    // Convert HSL to RGB
     const c = (1 - Math.abs(2 * (lightness / 100) - 1)) * (saturation / 100);
     const x = c * (1 - Math.abs(((hue / 60) % 2) - 1));
     const m = lightness / 100 - c / 2;

@@ -8,7 +8,7 @@ import {
 import { Reflector } from '@nestjs/core';
 import { Request } from 'express';
 import { TDataCacheService } from '@/@shared/modules/cache/services/data-cache.service';
-import { IS_PUBLIC_KEY } from '@/@decorators/public.decorator';
+import { IS_PUBLIC_KEY } from '@/@shared/decorators/public.decorator';
 
 /** Rate limit configuration for public endpoints */
 const RATE_LIMIT = {
@@ -67,11 +67,7 @@ export class PublicRateLimitGuard implements CanActivate {
     }
 
     // Increment and refresh TTL
-    await this.cacheService.setSimple<number>(
-      key,
-      current + 1,
-      RATE_LIMIT.windowSeconds,
-    );
+    await this.cacheService.setSimple<number>(key, current + 1, RATE_LIMIT.windowSeconds);
 
     return true;
   }

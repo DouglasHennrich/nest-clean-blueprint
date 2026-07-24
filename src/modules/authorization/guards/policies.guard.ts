@@ -1,12 +1,7 @@
-import {
-  CanActivate,
-  ExecutionContext,
-  ForbiddenException,
-  Injectable,
-} from '@nestjs/common';
+import { CanActivate, ExecutionContext, ForbiddenException, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Request } from 'express';
-import { IS_PUBLIC_KEY } from '@/@decorators/public.decorator';
+import { IS_PUBLIC_KEY } from '@/@shared/decorators/public.decorator';
 import { CaslAbilityFactory } from '../casl-ability.factory';
 import { CHECK_POLICIES_KEY } from '../decorators/check-policies.decorator';
 import { TPolicyHandler } from '../models/policy.struct';
@@ -36,10 +31,10 @@ export class PoliciesGuard implements CanActivate {
     ]);
     if (isPublic) return true;
 
-    const handlers = this.reflector.getAllAndOverride<TPolicyHandler[]>(
-      CHECK_POLICIES_KEY,
-      [context.getHandler(), context.getClass()],
-    );
+    const handlers = this.reflector.getAllAndOverride<TPolicyHandler[]>(CHECK_POLICIES_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
 
     // No @CheckPolicies declared → allow all authenticated users
     if (!handlers || handlers.length === 0) return true;
@@ -52,9 +47,7 @@ export class PoliciesGuard implements CanActivate {
     const ability = this.caslAbilityFactory.defineAbility(user);
 
     const allowed = handlers.every((handler) =>
-      typeof handler === 'function'
-        ? handler(ability)
-        : handler.handle(ability),
+      typeof handler === 'function' ? handler(ability) : handler.handle(ability),
     );
 
     if (!allowed) throw new ForbiddenException('Insufficient permissions');

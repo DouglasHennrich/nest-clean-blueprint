@@ -1,23 +1,25 @@
-import { Controller, Get, Param } from '@nestjs/common';
+import { Controller, Get, Param, UseGuards } from '@nestjs/common';
 import { ZodValidationPipe } from '@/@shared/pipes/zod-validation.pipe';
-import { IRequestContext } from '@/@shared/protocols/request-context.struct';
-import { ReqContext } from '@/@decorators/request-context.decorator';
-import { AbstractApplicationException } from '@/@shared/errors/abstract-application-exception';
 import {
   backofficeGetRequestLogDtoParamSchema,
   TBackofficeGetRequestLogDtoParamSchema,
 } from '../../dto/request-logs/backoffice-get-request-log.dto';
 import { TBackofficeGetRequestLogService } from '../../services/request-logs/backoffice-get-request-log.service';
 import { BackofficeToken } from '../../decorators/backoffice.decorator';
+import { BackofficeGuard } from '../../guards/backoffice.guard';
+import { IBackofficeRequestLogPresenter } from '../../presenters/request-logs/backoffice-request-log.presenter';
 
 @Controller('backoffice/request-logs/:id')
+@UseGuards(BackofficeGuard)
 export class BackofficeGetRequestLogController {
-  constructor(private getRequestLogService: TBackofficeGetRequestLogService) {}
+  constructor(
+    private getRequestLogService: TBackofficeGetRequestLogService,
+    private requestLogPresenter: IBackofficeRequestLogPresenter,
+  ) {}
 
   @BackofficeToken()
   @Get()
   async getRequestLog(
-    @ReqContext() context: IRequestContext,
     @Param(new ZodValidationPipe(backofficeGetRequestLogDtoParamSchema))
     params: TBackofficeGetRequestLogDtoParamSchema,
   ) {
@@ -26,13 +28,9 @@ export class BackofficeGetRequestLogController {
     });
 
     if (result.error) {
-      if (result.error instanceof AbstractApplicationException) {
-        result.error.context = context;
-      }
-
       throw result.error;
     }
 
-    return result.getValue();
+    return this.requestLogPresenter.present({ entity: result.getValue()! });
   }
 }

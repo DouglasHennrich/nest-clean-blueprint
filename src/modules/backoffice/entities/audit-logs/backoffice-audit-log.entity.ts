@@ -1,10 +1,4 @@
-import {
-  Column,
-  CreateDateColumn,
-  Entity,
-  Index,
-  PrimaryGeneratedColumn,
-} from 'typeorm';
+import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn } from 'typeorm';
 import { IBackofficeAuditLogModel } from '@/modules/backoffice/models/audit-logs/backoffice-audit-log.struct';
 
 @Entity('audit_logs')

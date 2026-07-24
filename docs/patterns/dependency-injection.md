@@ -12,14 +12,11 @@ Every service, repository and presenter is consumed through an **abstract class 
 
 ```typescript
 // service file
-export abstract class TCreateOrderService extends AbstractService<
-  TCreateOrderDtoServiceSchema,
-  IOrderModel
-> {}
+export abstract class TCreateOrderService extends AbstractService<TCreateOrderDto, IOrderModel> {}
 
 @Injectable()
 export class CreateOrderService implements TCreateOrderService {
-  async execute(dto): Promise<Result<IOrderModel>> { /* … */ }
+  async execute(dto: TCreateOrderDto): Promise<Result<IOrderModel>> { /* … */ }
 }
 
 // module
@@ -42,6 +39,31 @@ export class OrdersRepository extends IOrdersRepository {
     super(repo, env, logger);
   }
 }
+```
+
+## Presenter pattern variant
+
+Presenter tokens **extend** `AbstractPresenter<Model, Response>` the same way. The concrete
+class has **no `@Injectable()`** — presenters are plain classes wired purely through the
+module's `useClass` binding:
+
+```typescript
+export abstract class IOrderPresenter extends AbstractPresenter<
+  IOrderModel,
+  IOrderPresenterResponseModel
+> {}
+
+export class OrderPresenter extends IOrderPresenter {
+  present({ entity }: { entity: IOrderModel; options?: any }): IOrderPresenterResponseModel {
+    return { id: entity.id, code: entity.code, /* … */ };
+  }
+}
+
+// module
+providers: [{ provide: IOrderPresenter, useClass: OrderPresenter }]
+
+// consumer
+constructor(private orderPresenter: IOrderPresenter) {}
 ```
 
 ## Constructor grouping

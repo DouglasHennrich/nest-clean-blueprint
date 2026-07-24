@@ -11,7 +11,8 @@ import { ZodError } from 'zod';
 import { isAxiosError } from 'axios';
 import { AbstractApplicationException } from '@/@shared/errors/abstract-application-exception';
 import { ILogger } from '@/@shared/classes/custom-logger';
-import { AsyncContext } from '@/@shared/classes/async-context';
+import { RequestContext } from '@/@shared/context/request.context';
+import { captureException } from '@/@shared/observability/sentry';
 
 /**
  * HTTP status codes treated as server-side failures — logged at error level.
@@ -47,11 +48,13 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const res = ctx.getResponse<Response>();
 
     // Drop errors that should never produce an HTTP response
-    if (this.shouldIgnore(exception, req)) {
+    if (this.shouldIgnore({ exception, req })) {
       return;
     }
 
-    const logId = AsyncContext.getRequestId() ?? req.requestId ?? 'no-id';
+    captureException(exception);
+
+    const logId = RequestContext.getRequestId() ?? 'no-id';
     const exc = exception as any;
 
     // Seed defaults from the raw exception before type-specific overrides
@@ -72,7 +75,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
       statusCode = HttpStatus.BAD_REQUEST;
       errorName = 'ValidationError';
       message = 'Validation failed';
-      validationErrors = exception.errors.map((e) => ({
+      validationErrors = exception.issues.map((e) => ({
         field: e.path.join('.'),
         message: e.message,
         code: e.code,
@@ -148,7 +151,13 @@ export class AllExceptionsFilter implements ExceptionFilter {
    * - AxiosError   → surfaced normally by default. Uncomment the block to suppress
    *                  errors from a specific outbound integration (e.g., a webhook).
    */
-  private shouldIgnore(exception: unknown, req: Request): boolean {
+  private shouldIgnore({
+    exception: _exception,
+    req,
+  }: {
+    exception: unknown;
+    req: Request;
+  }): boolean {
     if (req.path === '/favicon.ico') return true;
 
     // Customize to suppress specific outbound integration errors:

@@ -1,17 +1,20 @@
 import { z } from 'zod';
 
-export const {{action}}{{Entity}}DtoBodySchema = z.object({
-  // TODO: define request body fields.
+export const {{action}}{{Entity}}DtoSchema = z.object({
+  // TODO: define fields for this action's request shape (body, param or query).
 });
 
-export const {{action}}{{Entity}}DtoServiceSchema = {{action}}{{Entity}}DtoBodySchema.extend({
-  // TODO: define additional fields for service layer (e.g. id, timestamps).
-});
+export type T{{Action}}{{Entity}}Dto = z.infer<typeof {{action}}{{Entity}}DtoSchema>;
 
-export type T{{Action}}{{Entity}}DtoServiceSchema = z.infer<
-  typeof {{action}}{{Entity}}DtoServiceSchema
->;
-
-export type T{{Action}}{{Entity}}DtoBodySchema = z.infer<
-  typeof {{action}}{{Entity}}DtoBodySchema
->;
+// Optional: only add a service-layer variant when the service needs fields
+// beyond the request shape (e.g. merging the route `:id` param into the body
+// for an update action). See update-order.dto.ts in _example_orders for the
+// canonical case. Delete this block when not needed.
+//
+// export const {{action}}{{Entity}}ServiceDtoSchema = {{action}}{{Entity}}DtoSchema.extend({
+//   id: z.string().uuid(),
+// });
+//
+// export type T{{Action}}{{Entity}}ServiceDto = z.infer<
+//   typeof {{action}}{{Entity}}ServiceDtoSchema
+// >;

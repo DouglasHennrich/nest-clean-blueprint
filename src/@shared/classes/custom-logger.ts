@@ -7,7 +7,7 @@ import { S3Client } from '@aws-sdk/client-s3';
 
 import { TEnvService } from '@/modules/env/services/env.service';
 import { GenerateRandom } from '../utils/generateRandom';
-import { AsyncContext } from './async-context';
+import { RequestContext } from '../context/request.context';
 import { BackofficeConfigsSingleton } from '@/modules/backoffice/singletons/backoffice-configs.singleton';
 
 export abstract class ILogger {
@@ -195,11 +195,7 @@ export class CustomLogger extends ConsoleLogger implements ILogger {
         (typeof message === 'string' ? message : JSON.stringify(message)),
     };
 
-    if (
-      context &&
-      typeof context === 'object' &&
-      Object.keys(context).length > 0
-    ) {
+    if (context && typeof context === 'object' && Object.keys(context).length > 0) {
       winstonData.context = context;
     }
 
@@ -211,8 +207,8 @@ export class CustomLogger extends ConsoleLogger implements ILogger {
     message: any,
     context?: any,
   ): { requestId: string; contextName: string; errorMessage: string } {
-    // Get request ID from AsyncContext
-    const requestId = AsyncContext.getRequestId() || GenerateRandom.id();
+    // Get request ID from RequestContext
+    const requestId = RequestContext.getRequestId() || GenerateRandom.id();
 
     // Determina o contexto a ser usado
     let contextName: string;
@@ -226,12 +222,12 @@ export class CustomLogger extends ConsoleLogger implements ILogger {
       contextName = context;
       logData = typeof message === 'object' ? message : { message };
       errorMessage = typeof message === 'string' ? message : '';
-      // Use requestId from AsyncContext
+      // Use requestId from RequestContext
       logId = requestId;
 
       //
     } else if (context && typeof context === 'object') {
-      // Se for um objeto IRequestContext, usa o logId (ou requestId do AsyncContext)
+      // Se for um objeto IRequestContext, usa o logId (ou requestId do RequestContext)
       logId = context.logId || requestId;
 
       // Extract error message first
@@ -251,18 +247,10 @@ export class CustomLogger extends ConsoleLogger implements ILogger {
           errorMessage = errorMessage.replace(/\[([^\]]+)\]:\s*/, '').trim();
         } else {
           // Fallback to errorName or default
-          contextName =
-            context.errorName ||
-            this.contextName ||
-            this.context ||
-            'Application';
+          contextName = context.errorName || this.contextName || this.context || 'Application';
         }
       } else {
-        contextName =
-          context.errorName ||
-          this.contextName ||
-          this.context ||
-          'Application';
+        contextName = context.errorName || this.contextName || this.context || 'Application';
       }
 
       // Append logId as suffix if available
@@ -299,7 +287,7 @@ export class CustomLogger extends ConsoleLogger implements ILogger {
       contextName = this.contextName || this.context || 'Application';
       errorMessage = typeof message === 'string' ? message : String(message);
       logData = null; // No additional data to log
-      logId = requestId; // Use requestId from AsyncContext
+      logId = requestId; // Use requestId from RequestContext
       isSimpleLog = true;
     }
 
@@ -447,7 +435,7 @@ export class CustomLogger extends ConsoleLogger implements ILogger {
   //     discordMessage += `\n\`stack\`: ${stack}`;
   //   }
 
-  //   // Limitar a mensagem a no máximo 1900 caracteres, adicionando "..." se necessário
+  //   // Limit the message to a maximum of 1900 characters, appending "..." if needed
   //   if (discordMessage.length > 1900) {
   //     discordMessage = `${discordMessage.slice(0, 1900)}...`;
   //   }
@@ -461,7 +449,7 @@ export class CustomLogger extends ConsoleLogger implements ILogger {
   //       content: discordMessage,
   //     });
   //   } catch {
-  //     // Ignorar erros ao enviar para o webhook para não impactar o fluxo principal
+  //     // Ignore errors sending to the webhook so the main flow isn't impacted
   //   }
   // }
 }
@@ -503,7 +491,11 @@ const UNSAFE_KEYS = new Set([
 
 function sanitizeForLogging(
   obj: Record<string, unknown>,
+  seen: WeakSet<object> = new WeakSet(),
 ): Record<string, unknown> {
+  if (seen.has(obj)) return { '[Circular]': true };
+  seen.add(obj);
+
   const result: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(obj)) {
     if (UNSAFE_KEYS.has(key)) continue;
@@ -514,7 +506,11 @@ function sanitizeForLogging(
       !Array.isArray(value) &&
       !(value instanceof Error)
     ) {
-      result[key] = sanitizeForLogging(value as Record<string, unknown>);
+      if (seen.has(value)) {
+        result[key] = '[Circular]';
+      } else {
+        result[key] = sanitizeForLogging(value as Record<string, unknown>, seen);
+      }
     } else {
       result[key] = value;
     }

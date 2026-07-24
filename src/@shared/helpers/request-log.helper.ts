@@ -3,7 +3,7 @@ import { ILogger } from '@/@shared/classes/custom-logger';
 import { IBackofficeRequestLogsRepository } from '@/modules/backoffice/repositories/request-logs/backoffice-request-logs.repository';
 import { IBackofficeRequestLogModel } from '@/modules/backoffice/models/request-logs/backoffice-request-log.struct';
 
-export interface ICreateServiceRequestLogDTO {
+export interface ICreateServiceRequestLogDtoModel {
   serviceName: string;
   userId?: string;
   userEmail?: string;
@@ -29,29 +29,26 @@ export class RequestLogHelper {
    * Uses the service name as the "path" since there's no actual HTTP request
    */
   async createServiceRequestLog(
-    dto: ICreateServiceRequestLogDTO,
+    dto: ICreateServiceRequestLogDtoModel,
   ): Promise<IBackofficeRequestLogModel> {
     try {
       const requestLog = await this.backofficeRequestLogsRepository.create({
-        method: 'INTERNAL',
-        path: dto.serviceName,
-        userId: dto.userId,
-        userEmail: dto.userEmail,
-        userName: dto.userName,
-        body: dto.metadata ? JSON.stringify(dto.metadata) : undefined,
-        statusCode: 200, // Default to success, can be updated later if needed
+        data: {
+          method: 'INTERNAL',
+          path: dto.serviceName,
+          userId: dto.userId,
+          userEmail: dto.userEmail,
+          userName: dto.userName,
+          body: dto.metadata ? JSON.stringify(dto.metadata) : undefined,
+          statusCode: 200, // Default to success, can be updated later if needed
+        },
       });
 
-      this.logger.debug(
-        `Service RequestLog created for ${dto.serviceName}: ${requestLog.id}`,
-      );
+      this.logger.debug(`Service RequestLog created for ${dto.serviceName}: ${requestLog.id}`);
 
       return requestLog;
     } catch (error) {
-      this.logger.error(
-        `Failed to create service RequestLog for ${dto.serviceName}`,
-        error,
-      );
+      this.logger.error(`Failed to create service RequestLog for ${dto.serviceName}`, error);
       throw error;
     }
   }
@@ -67,15 +64,16 @@ export class RequestLogHelper {
     stackTrace?: string,
   ): Promise<void> {
     try {
-      await this.backofficeRequestLogsRepository.update(requestLogId, {
-        statusCode,
-        errorMessage,
-        stackTrace,
+      await this.backofficeRequestLogsRepository.update({
+        id: requestLogId,
+        data: {
+          statusCode,
+          errorMessage,
+          stackTrace,
+        },
       });
 
-      this.logger.debug(
-        `RequestLog ${requestLogId} updated with status ${statusCode}`,
-      );
+      this.logger.debug(`RequestLog ${requestLogId} updated with status ${statusCode}`);
     } catch (error) {
       this.logger.error(`Failed to update RequestLog ${requestLogId}`, error);
       // Don't throw - this is a non-critical operation

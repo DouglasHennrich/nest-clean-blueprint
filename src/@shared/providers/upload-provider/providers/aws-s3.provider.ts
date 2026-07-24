@@ -11,12 +11,12 @@ import { v4 as uuidv4 } from 'uuid';
 import { Result } from '@/@shared/classes/result';
 import { DefaultException } from '@/@shared/errors/abstract-application-exception';
 import {
-  IGetFileBufferResult,
-  IGetUrlResult,
-  IStorageOptions,
-  IUploadFileDto,
-  IUploadProviderOptions,
-  IUploadResult,
+  IGetFileBufferResultModel,
+  IGetUrlResultModel,
+  IStorageOptionsModel,
+  IUploadFileDtoModel,
+  IUploadProviderOptionsModel,
+  IUploadResultModel,
   TUploadProvider,
   UPLOAD_PROVIDER_OPTIONS,
 } from '../models/upload-provider.struct';
@@ -34,7 +34,7 @@ export class AwsS3StorageProvider implements TUploadProvider {
 
   constructor(
     @Inject(UPLOAD_PROVIDER_OPTIONS)
-    private readonly options: IUploadProviderOptions,
+    private readonly options: IUploadProviderOptionsModel,
   ) {
     this.client = new S3Client({
       region: this.options.region,
@@ -60,15 +60,11 @@ export class AwsS3StorageProvider implements TUploadProvider {
     };
   }
 
-  async uploadFile(dto: IUploadFileDto): Promise<Result<IUploadResult>> {
+  async uploadFile(dto: IUploadFileDtoModel): Promise<Result<IUploadResultModel>> {
     try {
       const fileId = uuidv4();
-      const ext = dto.file.originalname.includes('.')
-        ? dto.file.originalname.split('.').pop()
-        : '';
-      const key = ext
-        ? `${dto.bucket}/${fileId}.${ext}`
-        : `${dto.bucket}/${fileId}`;
+      const ext = dto.file.originalname.includes('.') ? dto.file.originalname.split('.').pop() : '';
+      const key = ext ? `${dto.bucket}/${fileId}.${ext}` : `${dto.bucket}/${fileId}`;
       const targetBucket = this.options.defaultBucket;
 
       await this.client.send(
@@ -90,16 +86,12 @@ export class AwsS3StorageProvider implements TUploadProvider {
       });
     } catch (error: any) {
       return Result.fail(
-        new DefaultException(
-          `Failed to upload file: ${error.message}`,
-          'UploadException',
-          500,
-        ),
+        new DefaultException(`Failed to upload file: ${error.message}`, 'UploadException', 500),
       );
     }
   }
 
-  async getFileUrl(payload: IStorageOptions): Promise<Result<IGetUrlResult>> {
+  async getFileUrl(payload: IStorageOptionsModel): Promise<Result<IGetUrlResultModel>> {
     try {
       const { bucket, key } = this.parseStorageId(payload.storageId);
       const url = await getSignedUrl(
@@ -110,26 +102,16 @@ export class AwsS3StorageProvider implements TUploadProvider {
       return Result.success({ url, expiresIn: this.signedUrlExpiresIn });
     } catch (error: any) {
       return Result.fail(
-        new DefaultException(
-          `Failed to sign URL: ${error.message}`,
-          'UploadSignUrlException',
-          500,
-        ),
+        new DefaultException(`Failed to sign URL: ${error.message}`, 'UploadSignUrlException', 500),
       );
     }
   }
 
-  async getFileBuffer(
-    payload: IStorageOptions,
-  ): Promise<Result<IGetFileBufferResult>> {
+  async getFileBuffer(payload: IStorageOptionsModel): Promise<Result<IGetFileBufferResultModel>> {
     try {
       const { bucket, key } = this.parseStorageId(payload.storageId);
-      const head = await this.client.send(
-        new HeadObjectCommand({ Bucket: bucket, Key: key }),
-      );
-      const obj = await this.client.send(
-        new GetObjectCommand({ Bucket: bucket, Key: key }),
-      );
+      const head = await this.client.send(new HeadObjectCommand({ Bucket: bucket, Key: key }));
+      const obj = await this.client.send(new GetObjectCommand({ Bucket: bucket, Key: key }));
       const chunks: Buffer[] = [];
       for await (const chunk of obj.Body as AsyncIterable<Buffer>) {
         chunks.push(chunk);
@@ -141,21 +123,15 @@ export class AwsS3StorageProvider implements TUploadProvider {
       });
     } catch (error: any) {
       return Result.fail(
-        new DefaultException(
-          `Failed to read file: ${error.message}`,
-          'UploadReadException',
-          500,
-        ),
+        new DefaultException(`Failed to read file: ${error.message}`, 'UploadReadException', 500),
       );
     }
   }
 
-  async deleteFile(payload: IStorageOptions): Promise<Result<void>> {
+  async deleteFile(payload: IStorageOptionsModel): Promise<Result<void>> {
     try {
       const { bucket, key } = this.parseStorageId(payload.storageId);
-      await this.client.send(
-        new DeleteObjectCommand({ Bucket: bucket, Key: key }),
-      );
+      await this.client.send(new DeleteObjectCommand({ Bucket: bucket, Key: key }));
       return Result.success();
     } catch (error: any) {
       return Result.fail(

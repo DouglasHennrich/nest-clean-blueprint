@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Between, FindOptionsWhere, ILike } from 'typeorm';
 import { Result } from '@/@shared/classes/result';
 import { AbstractService } from '@/@shared/classes/service';
-import { IPagination } from '@/@shared/classes/repository';
+import { IPaginationModel } from '@/@shared/classes/repository';
 import { TEnvService } from '@/modules/env/services/env.service';
 import { ILogger } from '@/@shared/classes/custom-logger';
 import {
@@ -15,7 +15,7 @@ import { IBackofficeRequestLogsRepository } from '../../repositories/request-log
 
 export abstract class TBackofficeListRequestLogsService extends AbstractService<
   TBackofficeListRequestLogsDtoServiceSchema,
-  IPagination<IBackofficeRequestLogModel>
+  IPaginationModel<IBackofficeRequestLogModel>
 > {}
 
 @Injectable()
@@ -49,7 +49,7 @@ export class BackofficeListRequestLogsService implements TBackofficeListRequestL
     startDate,
     endDate,
   }: TBackofficeListRequestLogsDtoServiceSchema): Promise<
-    Result<IPagination<IBackofficeRequestLogModel>>
+    Result<IPaginationModel<IBackofficeRequestLogModel>>
   > {
     const validateDtoResult = this.validateDto({
       page,
@@ -68,33 +68,31 @@ export class BackofficeListRequestLogsService implements TBackofficeListRequestL
 
     this.logger.log('Listing request logs');
 
-    // Construir condições WHERE
-    const whereConditions: FindOptionsWhere<BackofficeRequestLogEntity>[] = [];
+    // Build WHERE conditions — a single AND-ed object, not an array (an array of
+    // FindOptionsWhere is OR-joined by TypeORM, which would return rows matching
+    // ANY filter instead of ALL of them).
+    const where: FindOptionsWhere<BackofficeRequestLogEntity> = {};
 
     if (userId) {
-      whereConditions.push({ userId });
+      where.userId = userId;
     }
 
     if (method) {
-      whereConditions.push({ method });
+      where.method = method;
     }
 
     if (path) {
-      whereConditions.push({ path: ILike(`%${path}%`) });
+      where.path = ILike(`%${path}%`);
     }
 
     if (statusCode) {
-      whereConditions.push({ statusCode });
+      where.statusCode = statusCode;
     }
 
     if (startDate && endDate) {
-      whereConditions.push({
-        createdAt: Between(startDate, endDate),
-      });
+      where.createdAt = Between(startDate, endDate);
     } else if (startDate) {
-      whereConditions.push({
-        createdAt: Between(startDate, new Date()),
-      });
+      where.createdAt = Between(startDate, new Date());
     }
 
     const {
@@ -102,7 +100,7 @@ export class BackofficeListRequestLogsService implements TBackofficeListRequestL
       hasNextPage,
       total,
     } = await this.requestLogsRepository.find({
-      where: whereConditions,
+      where,
       offset,
       page,
       order: {
@@ -121,8 +119,7 @@ export class BackofficeListRequestLogsService implements TBackofficeListRequestL
     serviceDto: TBackofficeListRequestLogsDtoServiceSchema,
   ): Result<TBackofficeListRequestLogsDtoServiceSchema> {
     try {
-      const validatedDto =
-        backofficeListRequestLogsDtoServiceSchema.parse(serviceDto);
+      const validatedDto = backofficeListRequestLogsDtoServiceSchema.parse(serviceDto);
 
       return Result.success(validatedDto);
     } catch (error) {

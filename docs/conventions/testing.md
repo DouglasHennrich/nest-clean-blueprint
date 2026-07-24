@@ -17,6 +17,26 @@ pnpm jest path/to.spec.ts # single file
 pnpm jest -t 'name'       # single test by name
 ```
 
+## Coverage threshold (mandatory)
+
+`jest.config.js` runs on Jest 30 and enforces an 80% global coverage gate on branches,
+functions, lines and statements:
+
+```javascript
+coverageThreshold: {
+  global: {
+    branches: 80,
+    functions: 80,
+    lines: 80,
+    statements: 80,
+  },
+},
+```
+
+`pnpm test:cov` fails the run if any of these drop below 80%. `*.module.ts`, `main.ts`, and
+`@database/migrations/**`/`@database/datasource.ts` are excluded from
+`collectCoverageFrom` — everything else under `src/` counts.
+
 ## Assert errors by class instance
 
 ```typescript

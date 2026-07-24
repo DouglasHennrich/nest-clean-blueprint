@@ -1,3 +1,12 @@
+interface IFileMetadataModel {
+  fieldname: string;
+  originalname: string;
+  encoding: string;
+  mimetype: string;
+  size: number;
+  filename: string;
+}
+
 const SENSITIVE_KEYS = new Set([
   'password',
   'confirmpassword',
@@ -28,9 +37,7 @@ export class Sanitize {
     try {
       if (
         !data ||
-        (typeof data === 'object' &&
-          !Array.isArray(data) &&
-          Object.keys(data).length === 0)
+        (typeof data === 'object' && !Array.isArray(data) && Object.keys(data).length === 0)
       ) {
         return undefined;
       }
@@ -74,9 +81,7 @@ export class Sanitize {
         const sanitizedFiles = files
           .map((f) => this.extractFileMetadata(f))
           .filter((f) => f !== undefined);
-        return sanitizedFiles.length > 0
-          ? JSON.stringify(sanitizedFiles)
-          : undefined;
+        return sanitizedFiles.length > 0 ? JSON.stringify(sanitizedFiles) : undefined;
       }
 
       if (typeof files === 'object') {
@@ -113,22 +118,18 @@ export class Sanitize {
   /**
    * Internal helper for recursive masking.
    */
-  private static recursive(data: any): any {
+  private static recursive(data: unknown): unknown {
     if (data === null || data === undefined) return data;
 
     if (Array.isArray(data)) {
-      return data.map((item: any) => this.recursive(item));
+      return data.map((item: unknown) => this.recursive(item));
     }
 
     if (typeof data === 'object') {
-      const sanitized: Record<string, any> = {};
-      for (const key of Object.keys(data)) {
+      const sanitized: Record<string, unknown> = {};
+      for (const [key, value] of Object.entries(data as Record<string, unknown>)) {
         const lowerKey = key.toLowerCase();
-        if (SENSITIVE_KEYS.has(lowerKey)) {
-          sanitized[key] = '[REDACTED]';
-        } else {
-          sanitized[key] = this.recursive(data[key]);
-        }
+        sanitized[key] = SENSITIVE_KEYS.has(lowerKey) ? '[REDACTED]' : this.recursive(value);
       }
       return sanitized;
     }
@@ -139,7 +140,7 @@ export class Sanitize {
   /**
    * Extracts metadata from a file object.
    */
-  private static extractFileMetadata(file: any): any {
+  private static extractFileMetadata(file: any): IFileMetadataModel | undefined {
     if (!file || typeof file !== 'object' || !file.fieldname) {
       return undefined;
     }

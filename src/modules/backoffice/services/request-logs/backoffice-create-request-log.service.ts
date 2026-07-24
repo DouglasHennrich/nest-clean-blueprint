@@ -30,7 +30,9 @@ export class BackofficeCreateRequestLogService implements TBackofficeCreateReque
   async execute(
     serviceDto: TBackofficeCreateRequestLogDtoServiceSchema,
   ): Promise<Result<IBackofficeRequestLogModel>> {
-    const requestLog = await this.requestLogsRepository.create(serviceDto);
+    const requestLog = await this.requestLogsRepository.create({
+      data: serviceDto,
+    });
 
     return Result.success(requestLog);
   }

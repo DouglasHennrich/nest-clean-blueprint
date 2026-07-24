@@ -2,13 +2,7 @@ import { Injectable, NestMiddleware } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
 import { ILogger } from '@/@shared/classes/custom-logger';
 
-const IGNORED_PATHS = [
-  '/',
-  '/health',
-  '/api/v1/health',
-  '/metrics',
-  '/favicon.ico',
-];
+const IGNORED_PATHS = ['/', '/health', '/api/v1/health', '/metrics', '/favicon.ico'];
 const LOGGED_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
 
 @Injectable()

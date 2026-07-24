@@ -83,6 +83,23 @@ export const envSchema = z.object({
   //  Discord
   /// //////////////////////////
   EXTERNAL_DISCORD_WEBHOOK_URL: z.string().url().optional(),
+
+  /// //////////////////////////
+  //  Observability
+  /// //////////////////////////
+  SENTRY_DSN: z.string().optional(),
+
+  /// //////////////////////////
+  //  Upload provider
+  /// //////////////////////////
+  UPLOAD_PROVIDER: z.enum(['s3', 'gcs']).optional(),
+
+  /// //////////////////////////
+  //  GCS
+  /// //////////////////////////
+  EXTERNAL_GCS_PROJECT_ID: z.string().optional(),
+  EXTERNAL_GCS_BUCKET: z.string().optional(),
+  EXTERNAL_GCS_KEY_FILE: z.string().optional(),
 });
 
 /* eslint-disable-next-line @typescript-eslint/naming-convention */

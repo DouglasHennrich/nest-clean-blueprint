@@ -9,7 +9,7 @@
 
 This repository is **not a framework**. It is a **bootstrap** — a NestJS project skeleton containing:
 
-- Base classes (`Result`, `AbstractRepository`, `AbstractService`, `AbstractPresenter`, `AbstractEventListener`, `ILogger`, `AsyncContext`).
+- Base classes (`Result`, `AbstractRepository`, `AbstractService`, `AbstractPresenter`, `AbstractEventListener`, `ILogger`, `RequestContext`).
 - Shared infrastructure (middlewares, pipes, decorators, exceptions).
 - 3 ready-to-use providers (AWS SES + EJS, Node `crypto`, AWS S3).
 - 1 example module (`orders`) demonstrating **all** patterns end-to-end.
@@ -191,7 +191,7 @@ Set both `GITHUB_REPO` **and** `LOCAL_CACHE_DIR`. On startup the server checks `
 | Tool | What it returns |
 |---|---|
 | `get_blueprint` | Full `docs/ARCHITECTURE-BLUEPRINT.md` |
-| `list_patterns` / `get_pattern <name>` | Patterns: result-pattern, dependency-injection, pagination, async-context, event-driven |
+| `list_patterns` / `get_pattern <name>` | Patterns: result-pattern, dependency-injection, pagination, request-context, event-driven |
 | `list_conventions` / `get_convention <name>` | naming, module-structure, testing |
 | `list_providers` / `get_provider_docs <name>` | mail-provider, encrypt-decrypt-provider, upload-provider |
 | `list_templates` / `get_template <layer>` | Scaffolding `.hbs`: service, controller, repository, presenter, entity, dto, exception, module |
@@ -288,7 +288,7 @@ Full documentation in [`docs/`](./docs/):
   - [Result pattern](./docs/patterns/result-pattern.md)
   - [Dependency Injection via abstract tokens](./docs/patterns/dependency-injection.md)
   - [Pagination](./docs/patterns/pagination.md)
-  - [AsyncContext (correlation ID)](./docs/patterns/async-context.md)
+  - [RequestContext (correlation ID)](./docs/patterns/request-context.md)
   - [Event-driven communication](./docs/patterns/event-driven.md)
 - Conventions:
   - [Naming](./docs/conventions/naming.md)
@@ -314,12 +314,12 @@ In [`src/@shared/`](./src/@shared/):
 | `AbstractPresenter<M, R>` | `classes/presenter.ts` | `present` / `presentMany` / `presentWithoutRelations` |
 | `AbstractEventListener<Dto>` | `classes/event-listener.ts` | `handle(event)` contract for `@OnEvent` |
 | `ILogger` / `CustomLogger` | `classes/custom-logger.ts` | Structured logging with correlation ID |
-| `AsyncContext` | `classes/async-context.ts` | AsyncLocalStorage for requestId/userId/timezone |
+| `RequestContext` | `context/request.context.ts` | AsyncLocalStorage for requestId/userId/timezone |
 | `AbstractApplicationException` | `errors/abstract-application-exception.ts` | Base for every custom exception |
 | `ZodValidationPipe` | `pipes/zod-validation.pipe.ts` | Inline validation pipe for `@Body/@Query/@Param` |
-| `RequestIdMiddleware` | `middlewares/request-id.middleware.ts` | Seeds correlation ID per request |
-| `@ReqContext()` | `@decorators/request-context.decorator.ts` | Builds `IRequestContext` in the controller |
-| `@User()` | `@decorators/current-user.decorator.ts` | Extracts the authenticated user |
+| `RequestContextMiddleware` | `middlewares/request-context.middleware.ts` | Seeds correlation ID and request context per request |
+| `@ReqContext()` | `@shared/decorators/request-context.decorator.ts` | Builds `IRequestContextModel` in the controller |
+| `@User()` | `@shared/decorators/current-user.decorator.ts` | Extracts the authenticated user |
 
 ---
 
@@ -364,7 +364,7 @@ Summary:
 - Only controllers throw (and attach `context` first)
 - All input validated with inline `ZodValidationPipe`
 - Full path in `@Controller`, empty HTTP decorators
-- List services return `IPagination<T>` and inject `TEnvService`
+- List services return `IPaginationModel<T>` and inject `TEnvService`
 - Migrations created manually (`migration:create`, **never** `:generate`)
 - Errors tested via `toBeInstanceOf`, never by message
 - `pnpm check && pnpm lint && pnpm test:unit` pass

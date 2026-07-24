@@ -14,13 +14,13 @@ import {
 import { ILogger } from './custom-logger';
 import { TEnvService } from '@/modules/env/services/env.service';
 
-export interface IPagination<T> {
+export interface IPaginationModel<T> {
   hasNextPage: boolean;
   total?: number;
   data: T[];
 }
 
-interface IBulkOperationOptions {
+interface IBulkOperationOptionsModel {
   chunkSize?: number;
   useTransaction?: boolean;
   noModelReturn?: boolean;
@@ -29,7 +29,7 @@ interface IBulkOperationOptions {
 }
 
 // PostgreSQL-specific types and interfaces
-interface IPostgreSQLError {
+interface IPostgreSQLErrorModel {
   message: string;
   code?: string;
   detail?: string;
@@ -38,7 +38,7 @@ interface IPostgreSQLError {
   column?: string;
 }
 
-interface IQueryPerformanceMetrics {
+interface IQueryPerformanceMetricsModel {
   startTime: number;
   endTime?: number;
   duration?: number;
@@ -47,11 +47,18 @@ interface IQueryPerformanceMetrics {
   queryPlan?: any;
 }
 
-export interface IRepository<Entity extends ObjectLiteral, Model> {
-  create(
-    data: Omit<Entity, 'id' | 'createdAt' | 'updatedAt'>,
-    id?: string,
-  ): Promise<Model>;
+interface ISetNullRelationModel {
+  type: 'OneToOneSetNull' | 'OneToManySetNull';
+  relation: any;
+  targetEntity: any;
+  foreignKey: string;
+}
+
+export interface IRepositoryModel<Entity extends ObjectLiteral, Model> {
+  create(params: {
+    data: Omit<Entity, 'id' | 'createdAt' | 'updatedAt'>;
+    id?: string;
+  }): Promise<Model>;
 
   find(criteria: {
     where?: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[];
@@ -62,7 +69,7 @@ export interface IRepository<Entity extends ObjectLiteral, Model> {
     order?: FindOptionsOrder<Entity>;
     offset?: number;
     page?: number;
-  }): Promise<IPagination<Model>>;
+  }): Promise<IPaginationModel<Model>>;
 
   findAll(criteria: {
     where?: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[];
@@ -80,15 +87,13 @@ export interface IRepository<Entity extends ObjectLiteral, Model> {
     relations?: FindOptionsRelations<Entity>;
   }): Promise<Model | undefined>;
 
-  findById(
-    id: string,
-    specs?: {
-      excludeId?: string;
-      includeDeleted?: boolean;
-      select?: FindOptionsSelect<Entity>;
-      relations?: FindOptionsRelations<Entity>;
-    },
-  ): Promise<Model | undefined>;
+  findById(params: {
+    id: string;
+    excludeId?: string;
+    includeDeleted?: boolean;
+    select?: FindOptionsSelect<Entity>;
+    relations?: FindOptionsRelations<Entity>;
+  }): Promise<Model | undefined>;
 
   findLast(criteria: {
     where?: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[];
@@ -103,19 +108,17 @@ export interface IRepository<Entity extends ObjectLiteral, Model> {
     includeDeleted?: boolean;
   }): Promise<number>;
 
-  update(
-    id: string,
-    data: Omit<Partial<Entity>, 'id' | 'createdAt' | 'updatedAt'>,
-    opts?: { relations?: FindOptionsRelations<Entity> },
-  ): Promise<Model>;
+  update(params: {
+    id: string;
+    data: Omit<Partial<Entity>, 'id' | 'createdAt' | 'updatedAt'>;
+    relations?: FindOptionsRelations<Entity>;
+  }): Promise<Model>;
 
   softDelete(id: string | FindOptionsWhere<Entity>): Promise<void>;
 
   hardDelete(id: string | FindOptionsWhere<Entity>): Promise<void>;
 
-  restoreSoftDeleted(
-    id: string | FindOptionsWhere<Entity>,
-  ): Promise<Model | undefined>;
+  restoreSoftDeleted(id: string | FindOptionsWhere<Entity>): Promise<Model | undefined>;
 
   queryBuilder(alias: string): SelectQueryBuilder<Entity>;
 
@@ -124,7 +127,7 @@ export interface IRepository<Entity extends ObjectLiteral, Model> {
       data: Omit<Entity, 'id' | 'createdAt' | 'updatedAt'>;
       id?: string;
     }>;
-    options?: IBulkOperationOptions;
+    options?: IBulkOperationOptionsModel;
   }): Promise<Model[]>;
 
   bulkUpdate(payload: {
@@ -132,13 +135,13 @@ export interface IRepository<Entity extends ObjectLiteral, Model> {
       id: string;
       data: Omit<Partial<Entity>, 'id' | 'createdAt' | 'updatedAt'>;
     }>;
-    options?: IBulkOperationOptions;
+    options?: IBulkOperationOptionsModel;
   }): Promise<Model[]>;
 
   bulkUpdateWhere(payload: {
     where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[];
     data: Omit<Partial<Entity>, 'id' | 'createdAt' | 'updatedAt'>;
-    options?: IBulkOperationOptions;
+    options?: IBulkOperationOptionsModel;
   }): Promise<Model[]>;
 
   bulkDelete(payload: {
@@ -169,7 +172,7 @@ export interface IRepository<Entity extends ObjectLiteral, Model> {
 export abstract class AbstractRepository<
   Entity extends ObjectLiteral,
   Model,
-> implements IRepository<Entity, Model> {
+> implements IRepositoryModel<Entity, Model> {
   protected defaultPaginationLimit: number;
   protected developmentEnv: boolean;
 
@@ -178,11 +181,8 @@ export abstract class AbstractRepository<
     protected readonly envService: TEnvService,
     public readonly logger: ILogger,
   ) {
-    this.defaultPaginationLimit = this.envService.get(
-      'UTILITIES_PAGINATION_LIMIT',
-    );
-    this.developmentEnv =
-      this.envService.get('INFRA_ENVIRONMENT') === 'development';
+    this.defaultPaginationLimit = this.envService.get('UTILITIES_PAGINATION_LIMIT');
+    this.developmentEnv = this.envService.get('INFRA_ENVIRONMENT') === 'development';
   }
 
   /**
@@ -190,7 +190,7 @@ export abstract class AbstractRepository<
    * Default implementation returns the entity as-is (assumes Entity implements Model).
    */
   protected toModel(entity: Entity | null): Model | undefined {
-    return entity as unknown as Model;
+    return (entity ?? undefined) as unknown as Model | undefined;
   }
 
   protected get dataSource(): DataSource {
@@ -201,16 +201,17 @@ export abstract class AbstractRepository<
   // Interface functions
   // =============================================================================
 
-  async create(
-    data: Omit<Entity, 'id' | 'createdAt' | 'updatedAt'>,
-    id?: string,
-  ): Promise<Model> {
+  async create({
+    data,
+    id,
+  }: {
+    data: Omit<Entity, 'id' | 'createdAt' | 'updatedAt'>;
+    id?: string;
+  }): Promise<Model> {
     return this.execute(async () => {
       const entityData = id ? { ...data, id } : data;
       const savedEntity = await this.collection.save(
-        this.collection.create(
-          entityData as unknown as import('typeorm').DeepPartial<Entity>,
-        ),
+        this.collection.create(entityData as unknown as import('typeorm').DeepPartial<Entity>),
       );
 
       const model = this.toModel(savedEntity);
@@ -241,7 +242,7 @@ export abstract class AbstractRepository<
     offset?: number;
     page?: number;
     includeDeleted?: boolean;
-  }): Promise<IPagination<Model>> {
+  }): Promise<IPaginationModel<Model>> {
     return this.execute(async () => {
       const transformedPage = page ?? 1;
       const transformedOffset: number = offset ?? this.defaultPaginationLimit;
@@ -264,7 +265,7 @@ export abstract class AbstractRepository<
 
       const models = data
         .map((entity) => this.toModel(entity))
-        .filter((model): model is Model => model !== null);
+        .filter((model): model is Model => model !== undefined);
 
       return {
         data: models,
@@ -302,7 +303,7 @@ export abstract class AbstractRepository<
 
       const models = entities
         .map((entity) => this.toModel(entity))
-        .filter((model): model is Model => model !== null);
+        .filter((model): model is Model => model !== undefined);
 
       return models;
     }, 'findAll');
@@ -338,20 +339,17 @@ export abstract class AbstractRepository<
     }, 'findOne');
   }
 
-  async findById(
-    id: string,
-    {
-      select,
-      relations,
-      includeDeleted,
-    }: {
-      select?: FindOptionsSelect<Entity>;
-      relations?: FindOptionsRelations<Entity>;
-      includeDeleted?: boolean;
-    } = {
-      includeDeleted: false,
-    },
-  ): Promise<Model | undefined> {
+  async findById({
+    id,
+    select,
+    relations,
+    includeDeleted = false,
+  }: {
+    id: string;
+    select?: FindOptionsSelect<Entity>;
+    relations?: FindOptionsRelations<Entity>;
+    includeDeleted?: boolean;
+  }): Promise<Model | undefined> {
     return this.execute(async () => {
       if (id?.length === undefined || id?.length === 0 || id?.length === null) {
         return undefined;
@@ -430,11 +428,15 @@ export abstract class AbstractRepository<
     }, 'count');
   }
 
-  async update(
-    id: string,
-    data: Omit<Partial<Entity>, 'id' | 'createdAt' | 'updatedAt'>,
-    { relations }: { relations?: FindOptionsRelations<Entity> } = {},
-  ): Promise<Model> {
+  async update({
+    id,
+    data,
+    relations,
+  }: {
+    id: string;
+    data: Omit<Partial<Entity>, 'id' | 'createdAt' | 'updatedAt'>;
+    relations?: FindOptionsRelations<Entity>;
+  }): Promise<Model> {
     return this.execute(async () => {
       const entity = await this.collection.findOne({
         where: { id } as unknown as FindOptionsWhere<Entity>,
@@ -459,9 +461,7 @@ export abstract class AbstractRepository<
         const model = this.toModel(entityWithRelations);
 
         if (!model) {
-          throw new Error(
-            `Failed to transform entity to model after update with relations`,
-          );
+          throw new Error(`Failed to transform entity to model after update with relations`);
         }
 
         return model;
@@ -480,9 +480,7 @@ export abstract class AbstractRepository<
       await this.dataSource.transaction(async (manager) => {
         // First, find the entity to get its relations
         const whereCondition =
-          typeof id === 'string'
-            ? ({ id } as unknown as FindOptionsWhere<Entity>)
-            : id;
+          typeof id === 'string' ? ({ id } as unknown as FindOptionsWhere<Entity>) : id;
 
         const entity = await manager.findOne(this.collection.target, {
           where: whereCondition,
@@ -511,9 +509,7 @@ export abstract class AbstractRepository<
       await this.dataSource.transaction(async (manager) => {
         // First, find the entity to get its relations
         const whereCondition =
-          typeof id === 'string'
-            ? ({ id } as unknown as FindOptionsWhere<Entity>)
-            : id;
+          typeof id === 'string' ? ({ id } as unknown as FindOptionsWhere<Entity>) : id;
 
         const entity = await manager.findOne(this.collection.target, {
           where: whereCondition,
@@ -553,22 +549,34 @@ export abstract class AbstractRepository<
     }, 'softDelete');
   }
 
-  async restoreSoftDeleted(
-    id: string | FindOptionsWhere<Entity>,
-  ): Promise<Model | undefined> {
+  async restoreSoftDeleted(id: string | FindOptionsWhere<Entity>): Promise<Model | undefined> {
     return this.execute(async () => {
-      const entity = await this.collection.findOne({
-        where: { id } as unknown as FindOptionsWhere<Entity>,
-        withDeleted: true,
+      return this.dataSource.transaction(async (manager) => {
+        const whereCondition =
+          typeof id === 'string' ? ({ id } as unknown as FindOptionsWhere<Entity>) : id;
+
+        const entity = await manager.findOne(this.collection.target, {
+          where: whereCondition,
+          withDeleted: true,
+        });
+
+        if (!entity) {
+          throw new Error(`Entity with id ${id} not found`);
+        }
+
+        // Get all cascade relationships for this entity
+        const cascadeRelations = this.getCascadeRelations();
+
+        // Recursively restore cascade relations first
+        for (const relation of cascadeRelations) {
+          await this.restoreCascadeRelation(manager, entity, relation);
+        }
+
+        // Finally, restore the main entity
+        await manager.restore(this.collection.target, whereCondition);
+
+        return this.toModel(entity);
       });
-
-      if (!entity) {
-        throw new Error(`Entity with id ${id} not found`);
-      }
-
-      await this.collection.restore(id);
-
-      return this.toModel(entity);
     }, 'restoreSoftDeleted');
   }
 
@@ -585,15 +593,20 @@ export abstract class AbstractRepository<
   // =============================================================================
   // BULK OPERATIONS
   // =============================================================================
-  async batchUpsert(
+  async batchUpsert({
+    dataArray,
+    conflictColumns = ['id'],
+    updateOnConflict = true,
+    chunkSize = 500,
+  }: {
     dataArray: Array<{
       data: Omit<Entity, 'id' | 'createdAt' | 'updatedAt'>;
       id?: string;
-    }>,
-    conflictColumns: string[] = ['id'],
-    updateOnConflict = true,
-    chunkSize = 500,
-  ): Promise<Model[]> {
+    }>;
+    conflictColumns?: string[];
+    updateOnConflict?: boolean;
+    chunkSize?: number;
+  }): Promise<Model[]> {
     return this.execute(async () => {
       if (dataArray.length === 0) return [];
 
@@ -602,62 +615,49 @@ export abstract class AbstractRepository<
       for (let i = 0; i < dataArray.length; i += chunkSize) {
         const chunk = dataArray.slice(i, i + chunkSize);
 
-        const chunkResult = await this.dataSource.transaction(
-          async (manager) => {
-            const tableName = this.collection.metadata.tableName;
+        const chunkResult = await this.dataSource.transaction(async (manager) => {
+          const tableName = this.collection.metadata.tableName;
 
-            const sampleData = chunk[0].id
-              ? { ...chunk[0].data, id: chunk[0].id }
-              : chunk[0].data;
-            const columns = Object.keys(sampleData);
+          const sampleData = chunk[0].id ? { ...chunk[0].data, id: chunk[0].id } : chunk[0].data;
+          const columns = Object.keys(sampleData);
 
-            const valuesClauses: string[] = [];
-            const allValues: any[] = [];
-            let paramIndex = 1;
+          const valuesClauses: string[] = [];
+          const allValues: any[] = [];
+          let paramIndex = 1;
 
-            chunk.forEach((item) => {
-              const entityData = item.id
-                ? { ...item.data, id: item.id }
-                : item.data;
-              const itemValues = columns.map(
-                (col) => (entityData as Record<string, unknown>)[col],
-              );
-              const itemPlaceholders = itemValues
-                .map(() => `$${paramIndex++}`)
-                .join(', ');
+          chunk.forEach((item) => {
+            const entityData = item.id ? { ...item.data, id: item.id } : item.data;
+            const itemValues = columns.map((col) => (entityData as Record<string, unknown>)[col]);
+            const itemPlaceholders = itemValues.map(() => `$${paramIndex++}`).join(', ');
 
-              valuesClauses.push(`(${itemPlaceholders})`);
-              allValues.push(...itemValues);
-            });
+            valuesClauses.push(`(${itemPlaceholders})`);
+            allValues.push(...itemValues);
+          });
 
-            let query = `
+          let query = `
             INSERT INTO ${tableName} (${columns.map((c) => `"${c}"`).join(', ')})
             VALUES ${valuesClauses.join(', ')}
             ON CONFLICT (${conflictColumns.map((c) => `"${c}"`).join(', ')})
           `;
 
-            if (updateOnConflict) {
-              const updateColumns = columns
-                .filter(
-                  (col) =>
-                    !conflictColumns.includes(col) && col !== 'createdAt',
-                )
-                .map((col) => `"${col}" = EXCLUDED."${col}"`)
-                .join(', ');
+          if (updateOnConflict) {
+            const updateColumns = columns
+              .filter((col) => !conflictColumns.includes(col) && col !== 'createdAt')
+              .map((col) => `"${col}" = EXCLUDED."${col}"`)
+              .join(', ');
 
-              query += ` DO UPDATE SET ${updateColumns}${this.getUpdatedAtClause()}`;
-            } else {
-              query += ' DO NOTHING';
-            }
+            query += ` DO UPDATE SET ${updateColumns}${this.getUpdatedAtClause()}`;
+          } else {
+            query += ' DO NOTHING';
+          }
 
-            query += ' RETURNING *';
+          query += ' RETURNING *';
 
-            const batchResult = await manager.query(query, allValues);
-            return batchResult
-              .map((entity: Entity) => this.toModel(entity))
-              .filter((model): model is Model => model !== null);
-          },
-        );
+          const batchResult = await manager.query<Entity[]>(query, allValues);
+          return batchResult
+            .map((entity: Entity) => this.toModel(entity))
+            .filter((model): model is Model => model !== undefined);
+        });
 
         results.push(...chunkResult);
       }
@@ -674,7 +674,7 @@ export abstract class AbstractRepository<
       data: Omit<Entity, 'id' | 'createdAt' | 'updatedAt'>;
       id?: string;
     }>;
-    options?: IBulkOperationOptions;
+    options?: IBulkOperationOptionsModel;
   }): Promise<Model[]> {
     return this.execute(async () => {
       const {
@@ -695,12 +695,12 @@ export abstract class AbstractRepository<
           const chunk = data.slice(i, i + optimizedChunkSize);
 
           if (onConflictAction !== 'DO_NOTHING') {
-            const chunkResults = await this.batchUpsert(
-              chunk,
+            const chunkResults = await this.batchUpsert({
+              dataArray: chunk,
               conflictColumns,
-              onConflictAction === 'DO_UPDATE',
-              optimizedChunkSize,
-            );
+              updateOnConflict: onConflictAction === 'DO_UPDATE',
+              chunkSize: optimizedChunkSize,
+            });
 
             if (!noModelReturn) {
               results.push(...chunkResults);
@@ -708,17 +708,13 @@ export abstract class AbstractRepository<
           } else {
             const tableName = this.collection.metadata.tableName;
             const hasUpdatedAt = this.collection.metadata.columns.some(
-              (col: any) =>
-                col.propertyName === 'updatedAt' ||
-                col.databaseName === 'updated_at',
+              (col: any) => col.propertyName === 'updatedAt' || col.databaseName === 'updated_at',
             );
             const valuesToInsert = chunk.map((item) => {
               const entityData =
-                item.id && typeof item.id === 'string'
-                  ? { ...item.data, id: item.id }
-                  : item.data;
+                item.id && typeof item.id === 'string' ? { ...item.data, id: item.id } : item.data;
 
-              const result: any = {
+              const result: Record<string, unknown> = {
                 ...entityData,
                 createdAt: new Date(),
               };
@@ -763,8 +759,7 @@ export abstract class AbstractRepository<
               const rowPlaceholders: string[] = [];
 
               columnMappings.forEach((mapping, colIndex) => {
-                const paramIndex =
-                  rowIndex * columnMappings.length + colIndex + 1;
+                const paramIndex = rowIndex * columnMappings.length + colIndex + 1;
 
                 rowPlaceholders.push(`$${paramIndex}`);
                 values.push(row[mapping.propertyName]);
@@ -774,9 +769,7 @@ export abstract class AbstractRepository<
             });
 
             let query = `
-              INSERT INTO ${tableName} (${columns
-                .map((c) => `"${c}"`)
-                .join(', ')})
+              INSERT INTO ${tableName} (${columns.map((c) => `"${c}"`).join(', ')})
               VALUES ${placeholders.join(', ')}
             `;
 
@@ -821,14 +814,10 @@ export abstract class AbstractRepository<
       id: string;
       data: Omit<Partial<Entity>, 'id' | 'createdAt' | 'updatedAt'>;
     }>;
-    options?: IBulkOperationOptions;
+    options?: IBulkOperationOptionsModel;
   }): Promise<Model[]> {
     return this.execute(async () => {
-      const {
-        chunkSize = 500,
-        useTransaction = true,
-        noModelReturn = false,
-      } = options;
+      const { chunkSize = 500, useTransaction = true, noModelReturn = false } = options;
       const results: Model[] = [];
 
       if (data.length === 0) return results;
@@ -863,8 +852,7 @@ export abstract class AbstractRepository<
                 }[] = [];
 
                 propertyNames.forEach((propertyName) => {
-                  const column =
-                    metadata.findColumnWithPropertyName(propertyName);
+                  const column = metadata.findColumnWithPropertyName(propertyName);
                   if (column) {
                     columnMappings.push({
                       propertyName,
@@ -881,9 +869,7 @@ export abstract class AbstractRepository<
                 const query = `
                   UPDATE ${tableName}
                   SET ${columnMappings
-                    .map(
-                      (mapping, idx) => `"${mapping.columnName}" = $${idx + 2}`,
-                    )
+                    .map((mapping, idx) => `"${mapping.columnName}" = $${idx + 2}`)
                     .join(', ')}${this.getUpdatedAtClause()}
                   WHERE id = $1
                   ${!noModelReturn ? 'RETURNING *' : ''}
@@ -892,7 +878,7 @@ export abstract class AbstractRepository<
                 const parameters = [
                   updateItem.id,
                   ...columnMappings.map(
-                    (mapping) => (updateItem.data as any)[mapping.propertyName],
+                    (mapping): unknown => (updateItem.data as any)[mapping.propertyName],
                   ),
                 ];
 
@@ -932,9 +918,7 @@ export abstract class AbstractRepository<
               }
             });
 
-            const updateColumns = columnMappings.map(
-              (mapping) => mapping.columnName,
-            );
+            const updateColumns = columnMappings.map((mapping) => mapping.columnName);
             const ids = chunk.map((item) => item.id);
 
             if (!noModelReturn) {
@@ -944,13 +928,9 @@ export abstract class AbstractRepository<
               );
 
               if (existingEntities.length !== chunk.length) {
-                const foundIds: string[] = existingEntities.map(
-                  (e: { id: string }) => e.id,
-                );
+                const foundIds: string[] = existingEntities.map((e: { id: string }) => e.id);
                 const missingIds = ids.filter((id) => !foundIds.includes(id));
-                throw new Error(
-                  `Entities not found for ids: ${missingIds.join(', ')}`,
-                );
+                throw new Error(`Entities not found for ids: ${missingIds.join(', ')}`);
               }
             }
 
@@ -958,13 +938,10 @@ export abstract class AbstractRepository<
               const cases = chunk.map((item, itemIdx) => {
                 // Parameters are organized as: [ids array, ...ids for WHEN, ...values by column then by item]
                 // So for each column, we skip: 1 (ids array) + chunk.length (ids) + (columnIdx * chunk.length) + itemIdx
-                const paramIdx =
-                  2 + chunk.length + columnIdx * chunk.length + itemIdx;
+                const paramIdx = 2 + chunk.length + columnIdx * chunk.length + itemIdx;
                 return `WHEN id = $${itemIdx + 2} THEN $${paramIdx}`;
               });
-              return `"${column}" = CASE ${cases.join(
-                ' ',
-              )} ELSE "${column}" END`;
+              return `"${column}" = CASE ${cases.join(' ')} ELSE "${column}" END`;
             });
 
             const updatedAtColumn = this.getUpdatedAtColumnName();
@@ -1011,8 +988,7 @@ export abstract class AbstractRepository<
               }[] = [];
 
               propertyNames.forEach((propertyName) => {
-                const column =
-                  metadata.findColumnWithPropertyName(propertyName);
+                const column = metadata.findColumnWithPropertyName(propertyName);
                 if (column) {
                   columnMappings.push({
                     propertyName,
@@ -1029,9 +1005,7 @@ export abstract class AbstractRepository<
               const query = `
                 UPDATE ${tableName}
                 SET ${columnMappings
-                  .map(
-                    (mapping, idx) => `"${mapping.columnName}" = $${idx + 2}`,
-                  )
+                  .map((mapping, idx) => `"${mapping.columnName}" = $${idx + 2}`)
                   .join(', ')}${this.getUpdatedAtClause()}
                 WHERE id = $1
                 ${!noModelReturn ? 'RETURNING *' : ''}
@@ -1040,7 +1014,7 @@ export abstract class AbstractRepository<
               const parameters = [
                 updateItem.id,
                 ...columnMappings.map(
-                  (mapping) => (updateItem.data as any)[mapping.propertyName],
+                  (mapping): unknown => (updateItem.data as any)[mapping.propertyName],
                 ),
               ];
 
@@ -1074,7 +1048,7 @@ export abstract class AbstractRepository<
   }: {
     where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[];
     data: Omit<Partial<Entity>, 'id' | 'createdAt' | 'updatedAt'>;
-    options?: IBulkOperationOptions;
+    options?: IBulkOperationOptionsModel;
   }): Promise<Model[]> {
     return this.execute(async () => {
       const { useTransaction = true, noModelReturn = false } = options;
@@ -1107,16 +1081,13 @@ export abstract class AbstractRepository<
           }
         });
 
-        // Build WHERE clause from the where condition
-        const whereClause = this.buildWhereClause(where);
-        const whereParams = this.extractWhereParameters(where);
+        // Build WHERE clause and its parameters together in a single pass so the
+        // generated placeholder numbers always line up 1:1 with the parameters array.
+        const { clause: whereClause, params: whereParams } = this.buildWhereClauseWithParams(where);
 
         // Build SET clause
         const setClause = columnMappings
-          .map(
-            (mapping, idx) =>
-              `"${mapping.columnName}" = $${idx + whereParams.length + 1}`,
-          )
+          .map((mapping, idx) => `"${mapping.columnName}" = $${idx + whereParams.length + 1}`)
           .join(', ');
 
         // Add updatedAt dynamically
@@ -1133,9 +1104,7 @@ export abstract class AbstractRepository<
         // Build parameters array
         const parameters = [
           ...whereParams,
-          ...columnMappings.map(
-            (mapping) => (data as any)[mapping.propertyName],
-          ),
+          ...columnMappings.map((mapping): unknown => (data as any)[mapping.propertyName]),
         ];
 
         const updateResult = await manager.query(query, parameters);
@@ -1163,7 +1132,7 @@ export abstract class AbstractRepository<
     options = { soft: true, chunkSize: 500, useTransaction: true },
   }: {
     ids: string[];
-    options?: IBulkOperationOptions & { soft?: boolean };
+    options?: IBulkOperationOptionsModel & { soft?: boolean };
   }): Promise<void> {
     return this.execute(async () => {
       const { soft = true, chunkSize = 500, useTransaction = true } = options;
@@ -1195,7 +1164,7 @@ export abstract class AbstractRepository<
     options = { soft: true, chunkSize: 500, useTransaction: true },
   }: {
     where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[];
-    options?: IBulkOperationOptions & { soft?: boolean };
+    options?: IBulkOperationOptionsModel & { soft?: boolean };
   }): Promise<void> {
     return this.execute(async () => {
       const { soft = true, chunkSize = 500, useTransaction = true } = options;
@@ -1210,7 +1179,7 @@ export abstract class AbstractRepository<
 
         if (entities.length === 0) return;
 
-        const ids = entities.map((entity: any) => entity.id);
+        const ids = entities.map((entity: any): string => entity.id as string);
 
         // Process in chunks
         for (let i = 0; i < ids.length; i += chunkSize) {
@@ -1240,10 +1209,7 @@ export abstract class AbstractRepository<
    * Bulk soft delete with cascade in batch mode
    * Applies SET NULL and CASCADE relations efficiently
    */
-  private async bulkSoftDeleteWithCascade(
-    manager: EntityManager,
-    ids: string[],
-  ): Promise<void> {
+  private async bulkSoftDeleteWithCascade(manager: EntityManager, ids: string[]): Promise<void> {
     const tableName = this.collection.metadata.tableName;
     const deletedAtColumn = this.getDeletedAtColumnName();
 
@@ -1278,19 +1244,14 @@ export abstract class AbstractRepository<
       [ids],
     );
 
-    this.logger.debug(
-      `Bulk soft deleted ${ids.length} ${tableName} records with cascade`,
-    );
+    this.logger.debug(`Bulk soft deleted ${ids.length} ${tableName} records with cascade`);
   }
 
   /**
    * Bulk hard delete with cascade in batch mode
    * Applies SET NULL and CASCADE relations efficiently
    */
-  private async bulkHardDeleteWithCascade(
-    manager: EntityManager,
-    ids: string[],
-  ): Promise<void> {
+  private async bulkHardDeleteWithCascade(manager: EntityManager, ids: string[]): Promise<void> {
     const tableName = this.collection.metadata.tableName;
 
     // Step 1: Get all SET NULL relationships
@@ -1312,9 +1273,7 @@ export abstract class AbstractRepository<
     // Step 5: Finally, bulk hard delete the main entities
     await manager.query(`DELETE FROM ${tableName} WHERE id = ANY($1)`, [ids]);
 
-    this.logger.debug(
-      `Bulk hard deleted ${ids.length} ${tableName} records with cascade`,
-    );
+    this.logger.debug(`Bulk hard deleted ${ids.length} ${tableName} records with cascade`);
   }
 
   /**
@@ -1343,8 +1302,8 @@ export abstract class AbstractRepository<
       [parentIds],
     );
 
-    if (updateResult.affectedRows > 0 || updateResult[1] > 0) {
-      const affectedCount = updateResult.affectedRows || updateResult[1] || 0;
+    const affectedCount = updateResult.rowCount ?? 0;
+    if (affectedCount > 0) {
       this.logger.debug(
         `Bulk updated foreign key ${foreignKey} to null in ${affectedCount} ${targetEntity.name} records`,
       );
@@ -1364,25 +1323,13 @@ export abstract class AbstractRepository<
 
     switch (type) {
       case 'OneToMany':
-        await this.bulkSoftDeleteOneToManyRelation(
-          manager,
-          parentIds,
-          cascadeRelation,
-        );
+        await this.bulkSoftDeleteOneToManyRelation(manager, parentIds, cascadeRelation);
         break;
       case 'OneToOne':
-        await this.bulkSoftDeleteOneToOneRelation(
-          manager,
-          parentIds,
-          cascadeRelation,
-        );
+        await this.bulkSoftDeleteOneToOneRelation(manager, parentIds, cascadeRelation);
         break;
       case 'ManyToMany':
-        await this.bulkSoftDeleteManyToManyRelation(
-          manager,
-          parentIds,
-          cascadeRelation,
-        );
+        await this.bulkSoftDeleteManyToManyRelation(manager, parentIds, cascadeRelation);
         break;
     }
   }
@@ -1400,25 +1347,13 @@ export abstract class AbstractRepository<
 
     switch (type) {
       case 'OneToMany':
-        await this.bulkHardDeleteOneToManyRelation(
-          manager,
-          parentIds,
-          cascadeRelation,
-        );
+        await this.bulkHardDeleteOneToManyRelation(manager, parentIds, cascadeRelation);
         break;
       case 'OneToOne':
-        await this.bulkHardDeleteOneToOneRelation(
-          manager,
-          parentIds,
-          cascadeRelation,
-        );
+        await this.bulkHardDeleteOneToOneRelation(manager, parentIds, cascadeRelation);
         break;
       case 'ManyToMany':
-        await this.bulkHardDeleteManyToManyRelation(
-          manager,
-          parentIds,
-          cascadeRelation,
-        );
+        await this.bulkHardDeleteManyToManyRelation(manager, parentIds, cascadeRelation);
         break;
     }
   }
@@ -1459,18 +1394,14 @@ export abstract class AbstractRepository<
 
     if (relatedEntitiesResult.length === 0) return;
 
-    const relatedIds = relatedEntitiesResult.map((row: any) => row.id);
+    const relatedIds = relatedEntitiesResult.map((row: any): string => row.id as string);
 
     // Get nested cascades for related entities
     const nestedCascades = this.getCascadeRelations(targetMetadata, true);
 
     // Recursively handle nested cascades
     for (const nestedCascade of nestedCascades) {
-      await this.bulkSoftDeleteCascadeRelation(
-        manager,
-        relatedIds,
-        nestedCascade,
-      );
+      await this.bulkSoftDeleteCascadeRelation(manager, relatedIds, nestedCascade);
     }
 
     // Soft delete all related entities
@@ -1511,24 +1442,18 @@ export abstract class AbstractRepository<
 
     if (relatedEntitiesResult.length === 0) return;
 
-    const relatedIds = relatedEntitiesResult.map((row: any) => row.id);
+    const relatedIds = relatedEntitiesResult.map((row: any): string => row.id as string);
 
     // Get nested cascades for related entities
     const nestedCascades = this.getCascadeRelations(targetMetadata, true);
 
     // Recursively handle nested cascades
     for (const nestedCascade of nestedCascades) {
-      await this.bulkHardDeleteCascadeRelation(
-        manager,
-        relatedIds,
-        nestedCascade,
-      );
+      await this.bulkHardDeleteCascadeRelation(manager, relatedIds, nestedCascade);
     }
 
     // Hard delete all related entities
-    await manager.query(`DELETE FROM ${targetTableName} WHERE id = ANY($1)`, [
-      relatedIds,
-    ]);
+    await manager.query(`DELETE FROM ${targetTableName} WHERE id = ANY($1)`, [relatedIds]);
 
     this.logger.debug(
       `Bulk hard deleted ${relatedIds.length} ${targetEntity.name} cascade records`,
@@ -1550,8 +1475,7 @@ export abstract class AbstractRepository<
     const parentTableName = this.collection.metadata.tableName;
 
     // Find the column metadata for the join column
-    const column =
-      this.collection.metadata.findColumnWithPropertyName(joinColumn);
+    const column = this.collection.metadata.findColumnWithPropertyName(joinColumn);
     const columnName = column ? column.databaseName : joinColumn;
 
     // Get deletedAt column for the related entity
@@ -1575,7 +1499,7 @@ export abstract class AbstractRepository<
     if (foreignKeyValuesResult.length === 0) return;
 
     const relatedIds = foreignKeyValuesResult
-      .map((row: any) => row.fk_value)
+      .map((row: any): string => row.fk_value as string)
       .filter((id: any) => id !== null);
 
     if (relatedIds.length === 0) return;
@@ -1585,11 +1509,7 @@ export abstract class AbstractRepository<
 
     // Recursively handle nested cascades
     for (const nestedCascade of nestedCascades) {
-      await this.bulkSoftDeleteCascadeRelation(
-        manager,
-        relatedIds,
-        nestedCascade,
-      );
+      await this.bulkSoftDeleteCascadeRelation(manager, relatedIds, nestedCascade);
     }
 
     // Soft delete related entities
@@ -1620,8 +1540,7 @@ export abstract class AbstractRepository<
     const parentTableName = this.collection.metadata.tableName;
 
     // Find the column metadata for the join column
-    const column =
-      this.collection.metadata.findColumnWithPropertyName(joinColumn);
+    const column = this.collection.metadata.findColumnWithPropertyName(joinColumn);
     const columnName = column ? column.databaseName : joinColumn;
 
     // Get foreign key values from parent entities
@@ -1635,7 +1554,7 @@ export abstract class AbstractRepository<
     if (foreignKeyValuesResult.length === 0) return;
 
     const relatedIds = foreignKeyValuesResult
-      .map((row: any) => row.fk_value)
+      .map((row: any): string => row.fk_value as string)
       .filter((id: any) => id !== null);
 
     if (relatedIds.length === 0) return;
@@ -1645,17 +1564,11 @@ export abstract class AbstractRepository<
 
     // Recursively handle nested cascades
     for (const nestedCascade of nestedCascades) {
-      await this.bulkHardDeleteCascadeRelation(
-        manager,
-        relatedIds,
-        nestedCascade,
-      );
+      await this.bulkHardDeleteCascadeRelation(manager, relatedIds, nestedCascade);
     }
 
     // Hard delete related entities
-    await manager.query(`DELETE FROM ${targetTableName} WHERE id = ANY($1)`, [
-      relatedIds,
-    ]);
+    await manager.query(`DELETE FROM ${targetTableName} WHERE id = ANY($1)`, [relatedIds]);
 
     this.logger.debug(
       `Bulk hard deleted ${relatedIds.length} ${targetEntity.name} cascade records`,
@@ -1686,10 +1599,9 @@ export abstract class AbstractRepository<
     }
 
     // Remove junction table entries in batch
-    await manager.query(
-      `DELETE FROM ${junctionTable} WHERE "${ownerColumnName}" = ANY($1)`,
-      [parentIds],
-    );
+    await manager.query(`DELETE FROM ${junctionTable} WHERE "${ownerColumnName}" = ANY($1)`, [
+      parentIds,
+    ]);
 
     this.logger.debug(
       `Bulk deleted junction table entries from ${junctionTable} for ${parentIds.length} records`,
@@ -1705,11 +1617,7 @@ export abstract class AbstractRepository<
     relationConfig: any,
   ): Promise<void> {
     // ManyToMany hard delete is the same as soft delete for junction tables
-    await this.bulkSoftDeleteManyToManyRelation(
-      manager,
-      parentIds,
-      relationConfig,
-    );
+    await this.bulkSoftDeleteManyToManyRelation(manager, parentIds, relationConfig);
   }
 
   // =============================================================================
@@ -1722,7 +1630,7 @@ export abstract class AbstractRepository<
     rawQuery?: string,
     parameters?: any[],
   ): Promise<T> {
-    const metrics: IQueryPerformanceMetrics = {
+    const metrics: IQueryPerformanceMetricsModel = {
       startTime: Date.now(),
       operation: operationName || operation.name || 'unknown',
       affectedRows: 0,
@@ -1736,12 +1644,7 @@ export abstract class AbstractRepository<
 
       // Enhanced slow query logging with detailed analysis
       setImmediate(() => {
-        this.logSlowQueryDetails(
-          metrics,
-          queryBuilder,
-          rawQuery,
-          parameters,
-        ).catch((error) => {
+        this.logSlowQueryDetails(metrics, queryBuilder, rawQuery, parameters).catch((error) => {
           this.logger.warn(`Error in logSlowQueryDetails: ${error.message}`);
         });
       });
@@ -1870,10 +1773,8 @@ export abstract class AbstractRepository<
     // ManyToMany: keep looking at the current entity's own relations since it owns the junction table
     metadata.manyToManyRelations.forEach((relation) => {
       if (relation.onDelete === 'CASCADE' && relation.isOwning) {
-        const ownerColumn =
-          relation.joinColumns?.[0]?.referencedColumn?.propertyName;
-        const inverseColumn =
-          relation.inverseJoinColumns?.[0]?.referencedColumn?.propertyName;
+        const ownerColumn = relation.joinColumns?.[0]?.referencedColumn?.propertyName;
+        const inverseColumn = relation.inverseJoinColumns?.[0]?.referencedColumn?.propertyName;
 
         if (!ownerColumn || !inverseColumn) {
           this.logger.warn(
@@ -1900,9 +1801,9 @@ export abstract class AbstractRepository<
    * Get all relations that have onDelete: 'SET NULL' configured
    * This finds entities that reference THIS entity and should be set to null when this entity is deleted
    */
-  private getSetNullRelations() {
+  private getSetNullRelations(): ISetNullRelationModel[] {
     const currentEntityTarget = this.collection.metadata.target;
-    const setNullRelations: any[] = [];
+    const setNullRelations: ISetNullRelationModel[] = [];
 
     // Iterate over all entity metadatas to find relations that reference this entity with SET NULL
     this.dataSource.entityMetadatas.forEach((entityMetadata) => {
@@ -1989,25 +1890,13 @@ export abstract class AbstractRepository<
 
     switch (type) {
       case 'OneToMany':
-        await this.softDeleteOneToManyRelation(
-          manager,
-          parentEntity,
-          relationConfig,
-        );
+        await this.softDeleteOneToManyRelation(manager, parentEntity, relationConfig);
         break;
       case 'OneToOne':
-        await this.softDeleteOneToOneRelation(
-          manager,
-          parentEntity,
-          relationConfig,
-        );
+        await this.softDeleteOneToOneRelation(manager, parentEntity, relationConfig);
         break;
       case 'ManyToMany':
-        await this.softDeleteManyToManyRelation(
-          manager,
-          parentEntity,
-          relationConfig,
-        );
+        await this.softDeleteManyToManyRelation(manager, parentEntity, relationConfig);
         break;
     }
   }
@@ -2037,11 +1926,7 @@ export abstract class AbstractRepository<
       const nestedCascades = this.getCascadeRelations(relatedMetadata, true);
 
       for (const nestedCascade of nestedCascades) {
-        await this.softDeleteCascadeRelation(
-          manager,
-          relatedEntity as Entity,
-          nestedCascade,
-        );
+        await this.softDeleteCascadeRelation(manager, relatedEntity as Entity, nestedCascade);
       }
 
       // Soft delete the related entity
@@ -2074,11 +1959,7 @@ export abstract class AbstractRepository<
       const nestedCascades = this.getCascadeRelations(relatedMetadata, true);
 
       for (const nestedCascade of nestedCascades) {
-        await this.softDeleteCascadeRelation(
-          manager,
-          relatedEntity as Entity,
-          nestedCascade,
-        );
+        await this.softDeleteCascadeRelation(manager, relatedEntity as Entity, nestedCascade);
       }
 
       // Soft delete the related entity
@@ -2104,10 +1985,7 @@ export abstract class AbstractRepository<
     // But if you need to soft delete them as well, you can implement that logic here
 
     // Remove junction table entries
-    await manager.query(
-      `DELETE FROM ${junctionTable} WHERE "${ownerColumn}" = $1`,
-      [parentId],
-    );
+    await manager.query(`DELETE FROM ${junctionTable} WHERE "${ownerColumn}" = $1`, [parentId]);
 
     // If you need to also soft delete the related entities:
     // const relatedIds = await manager.query(
@@ -2136,18 +2014,10 @@ export abstract class AbstractRepository<
 
     switch (type) {
       case 'OneToMany':
-        await this.restoreOneToManyRelation(
-          manager,
-          parentEntity,
-          relationConfig,
-        );
+        await this.restoreOneToManyRelation(manager, parentEntity, relationConfig);
         break;
       case 'OneToOne':
-        await this.restoreOneToOneRelation(
-          manager,
-          parentEntity,
-          relationConfig,
-        );
+        await this.restoreOneToOneRelation(manager, parentEntity, relationConfig);
         break;
       case 'ManyToMany':
         this.restoreManyToManyRelation(manager, parentEntity, relationConfig);
@@ -2174,8 +2044,7 @@ export abstract class AbstractRepository<
 
     // Only restore entities that are currently soft-deleted
     const softDeletedEntities = relatedEntities.filter(
-      (entity: any) =>
-        entity.deletedAt !== null && entity.deletedAt !== undefined,
+      (entity: any) => entity.deletedAt !== null && entity.deletedAt !== undefined,
     );
 
     for (const relatedEntity of softDeletedEntities) {
@@ -2186,11 +2055,7 @@ export abstract class AbstractRepository<
       const nestedCascades = this.getCascadeRelations(relatedMetadata, true);
 
       for (const nestedCascade of nestedCascades) {
-        await this.restoreCascadeRelation(
-          manager,
-          relatedEntity as Entity,
-          nestedCascade,
-        );
+        await this.restoreCascadeRelation(manager, relatedEntity as Entity, nestedCascade);
       }
 
       // Restore the related entity
@@ -2228,11 +2093,7 @@ export abstract class AbstractRepository<
     const nestedCascades = this.getCascadeRelations(relatedMetadata, true);
 
     for (const nestedCascade of nestedCascades) {
-      await this.restoreCascadeRelation(
-        manager,
-        relatedEntity as Entity,
-        nestedCascade,
-      );
+      await this.restoreCascadeRelation(manager, relatedEntity as Entity, nestedCascade);
     }
 
     // Restore the related entity
@@ -2269,8 +2130,7 @@ export abstract class AbstractRepository<
 
     // Try to find updatedAt column (camelCase)
     const camelCaseColumn = entityMetadata.columns.find(
-      (col: any) =>
-        col.propertyName === 'updatedAt' || col.databaseName === 'updatedAt',
+      (col: any) => col.propertyName === 'updatedAt' || col.databaseName === 'updatedAt',
     );
 
     if (camelCaseColumn) {
@@ -2279,8 +2139,7 @@ export abstract class AbstractRepository<
 
     // Try to find updated_at column (snake_case)
     const snakeCaseColumn = entityMetadata.columns.find(
-      (col: any) =>
-        col.propertyName === 'updatedAt' || col.databaseName === 'updated_at',
+      (col: any) => col.propertyName === 'updatedAt' || col.databaseName === 'updated_at',
     );
 
     if (snakeCaseColumn) {
@@ -2300,8 +2159,7 @@ export abstract class AbstractRepository<
 
     // Try to find deletedAt column (camelCase)
     const camelCaseColumn = entityMetadata.columns.find(
-      (col: any) =>
-        col.propertyName === 'deletedAt' || col.databaseName === 'deletedAt',
+      (col: any) => col.propertyName === 'deletedAt' || col.databaseName === 'deletedAt',
     );
 
     if (camelCaseColumn) {
@@ -2310,8 +2168,7 @@ export abstract class AbstractRepository<
 
     // Try to find deleted_at column (snake_case)
     const snakeCaseColumn = entityMetadata.columns.find(
-      (col: any) =>
-        col.propertyName === 'deletedAt' || col.databaseName === 'deleted_at',
+      (col: any) => col.propertyName === 'deletedAt' || col.databaseName === 'deleted_at',
     );
 
     if (snakeCaseColumn) {
@@ -2331,207 +2188,123 @@ export abstract class AbstractRepository<
   }
 
   /**
-   * Builds a WHERE clause from FindOptionsWhere object
-   * Supports basic equality conditions and arrays of conditions (OR)
+   * Builds a WHERE clause and its bound parameters from a FindOptionsWhere object,
+   * in a single combined pass.
+   *
+   * Supports basic equality conditions, IS NULL, IN/NOT IN, comparison operators
+   * (Not/LessThan/.../ILike, in either the `$op`-prefixed or bare TypeORM-style form),
+   * and arrays of conditions (OR).
+   *
+   * The clause and its parameters are built together (instead of two separate passes
+   * with independently-tracked indices) so that every `$N` placeholder in the returned
+   * clause always corresponds 1:1 to `params[N - 1 - startIndex]` — there is exactly one
+   * running counter, shared by clause generation and parameter collection, so they can
+   * never drift apart.
    */
-  private buildWhereClause(
+  private buildWhereClauseWithParams(
     where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
-  ): string {
+    startIndex = 0,
+  ): { clause: string; params: unknown[] } {
+    const params: unknown[] = [];
+    let paramIndex = startIndex;
+
+    const consumeValue = (value: unknown): string => {
+      paramIndex += 1;
+      params.push(value);
+      return `$${paramIndex}`;
+    };
+
+    const buildSingle = (condition: FindOptionsWhere<Entity>): string => {
+      const conditions: string[] = [];
+
+      for (const [key, value] of Object.entries(condition)) {
+        const column = this.collection.metadata.findColumnWithPropertyName(key);
+        const columnName = column ? column.databaseName : key;
+        const quotedColumnName = `"${columnName}"`;
+
+        if (value === null) {
+          conditions.push(`${quotedColumnName} IS NULL`);
+        } else if (Array.isArray(value)) {
+          // Handle IN clause
+          const placeholders = value.map((item) => consumeValue(item)).join(', ');
+          conditions.push(`${quotedColumnName} IN (${placeholders})`);
+        } else if (typeof value === 'object' && value !== null) {
+          // Handle operators like Not, LessThan, etc.
+          conditions.push(...this.buildOperatorConditions(quotedColumnName, value, consumeValue));
+        } else {
+          // Simple equality
+          conditions.push(`${quotedColumnName} = ${consumeValue(value)}`);
+        }
+      }
+
+      return conditions.join(' AND ');
+    };
+
+    let clause: string;
     if (Array.isArray(where)) {
       // Handle array of conditions (OR)
-      const conditions = where.map(
-        (condition, index) =>
-          this.buildSingleWhereClause(condition, index * 100), // Offset for parameter numbering
-      );
-      return `(${conditions.join(' OR ')})`;
+      const conditions = where.map((condition) => buildSingle(condition));
+      clause = `(${conditions.join(' OR ')})`;
+    } else {
+      clause = buildSingle(where);
     }
-    return this.buildSingleWhereClause(where, 0);
+
+    return { clause, params };
   }
 
   /**
-   * Builds WHERE clause for a single condition object
-   */
-  private buildSingleWhereClause(
-    where: FindOptionsWhere<Entity>,
-    paramOffset: number,
-  ): string {
-    const conditions: string[] = [];
-    let paramIndex = paramOffset;
-
-    for (const [key, value] of Object.entries(where)) {
-      const column = this.collection.metadata.findColumnWithPropertyName(key);
-      const columnName = column ? column.databaseName : key;
-      const quotedColumnName = `"${columnName}"`;
-
-      if (value === null) {
-        conditions.push(`${quotedColumnName} IS NULL`);
-      } else if (Array.isArray(value)) {
-        // Handle IN clause
-        const placeholders = value.map(() => `$${++paramIndex}`).join(', ');
-        conditions.push(`${quotedColumnName} IN (${placeholders})`);
-      } else if (typeof value === 'object' && value !== null) {
-        // Handle operators like Not, LessThan, etc.
-        const operatorConditions = this.buildOperatorConditions(
-          quotedColumnName,
-          value,
-          paramIndex,
-        );
-        conditions.push(...operatorConditions.conditions);
-        paramIndex = operatorConditions.newParamIndex;
-      } else {
-        // Simple equality
-        conditions.push(`${quotedColumnName} = $${++paramIndex}`);
-      }
-    }
-
-    return conditions.join(' AND ');
-  }
-
-  /**
-   * Builds conditions for TypeORM operators
+   * Builds conditions for TypeORM operators, consuming parameter values (and advancing
+   * the shared param counter) via `consumeValue` as each placeholder is emitted.
    * Note: columnName parameter should already include proper quoting
    */
   private buildOperatorConditions(
     columnName: string,
     value: any,
-    paramIndex: number,
-  ): { conditions: string[]; newParamIndex: number } {
+    consumeValue: (value: unknown) => string,
+  ): string[] {
     const conditions: string[] = [];
-    let currentParamIndex = paramIndex;
 
-    if ('$ne' in value || 'Not' in value) {
-      conditions.push(`${columnName} != $${++currentParamIndex}`);
-    }
+    const pushComparison = (keys: string[], sqlOperator: string) => {
+      const matchedKey = keys.find((key) => key in value);
+      if (matchedKey !== undefined) {
+        conditions.push(`${columnName} ${sqlOperator} ${consumeValue(value[matchedKey])}`);
+      }
+    };
 
-    if ('$lt' in value || 'LessThan' in value) {
-      conditions.push(`${columnName} < $${++currentParamIndex}`);
-    }
-
-    if ('$lte' in value || 'LessThanOrEqual' in value) {
-      conditions.push(`${columnName} <= $${++currentParamIndex}`);
-    }
-
-    if ('$gt' in value || 'MoreThan' in value) {
-      conditions.push(`${columnName} > $${++currentParamIndex}`);
-    }
-
-    if ('$gte' in value || 'MoreThanOrEqual' in value) {
-      conditions.push(`${columnName} >= $${++currentParamIndex}`);
-    }
+    pushComparison(['$ne', 'Not'], '!=');
+    pushComparison(['$lt', 'LessThan'], '<');
+    pushComparison(['$lte', 'LessThanOrEqual'], '<=');
+    pushComparison(['$gt', 'MoreThan'], '>');
+    pushComparison(['$gte', 'MoreThanOrEqual'], '>=');
 
     if ('$in' in value || 'In' in value) {
       const _val = value.$in || value.In;
-      const placeholders = _val.map(() => `$${++currentParamIndex}`).join(', ');
+      const placeholders = _val.map((item: unknown) => consumeValue(item)).join(', ');
       conditions.push(`${columnName} IN (${placeholders})`);
     }
 
     if ('$nin' in value || 'NotIn' in value) {
       const _val = value.$nin || value.NotIn;
-      const placeholders = _val.map(() => `$${++currentParamIndex}`).join(', ');
+      const placeholders = _val.map((item: unknown) => consumeValue(item)).join(', ');
       conditions.push(`${columnName} NOT IN (${placeholders})`);
     }
 
     if ('$like' in value || 'Like' in value) {
-      conditions.push(`${columnName} LIKE $${++currentParamIndex}`);
+      conditions.push(`${columnName} LIKE ${consumeValue(value.$like ?? value.Like)}`);
     }
 
     if ('$ilike' in value || 'ILike' in value) {
-      conditions.push(`${columnName} ILIKE $${++currentParamIndex}`);
+      conditions.push(`${columnName} ILIKE ${consumeValue(value.$ilike ?? value.ILike)}`);
     }
 
-    return { conditions, newParamIndex: currentParamIndex };
-  }
-
-  /**
-   * Extracts parameters from FindOptionsWhere object
-   */
-  private extractWhereParameters(
-    where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
-  ): any[] {
-    const params: any[] = [];
-
-    if (Array.isArray(where)) {
-      where.forEach((condition) => {
-        params.push(...this.extractSingleWhereParameters(condition));
-      });
-    } else {
-      params.push(...this.extractSingleWhereParameters(where));
-    }
-
-    return params;
-  }
-
-  /**
-   * Extracts parameters from a single condition object
-   */
-  private extractSingleWhereParameters(where: FindOptionsWhere<Entity>): any[] {
-    const params: any[] = [];
-
-    Object.values(where).forEach((value) => {
-      if (value === null) {
-        // IS NULL doesn't need parameters
-      } else if (Array.isArray(value)) {
-        // Handle IN clause
-        params.push(...value);
-      } else if (typeof value === 'object' && value !== null) {
-        // Handle operators
-        params.push(...this.extractOperatorParameters(value));
-      } else {
-        // Simple equality
-        params.push(value);
-      }
-    });
-
-    return params;
-  }
-
-  /**
-   * Extracts parameters from operator objects
-   */
-  private extractOperatorParameters(value: any): any[] {
-    const params: any[] = [];
-
-    // Check all possible operators
-    const operators = [
-      '$ne',
-      'Not',
-      '$lt',
-      'LessThan',
-      '$lte',
-      'LessThanOrEqual',
-      '$gt',
-      'MoreThan',
-      '$gte',
-      'MoreThanOrEqual',
-      '$in',
-      'In',
-      '$nin',
-      'NotIn',
-      '$like',
-      'Like',
-      '$ilike',
-      'ILike',
-    ];
-
-    operators.forEach((op) => {
-      if (op in value) {
-        const val = value[op];
-        if (Array.isArray(val)) {
-          params.push(...val);
-        } else {
-          params.push(val);
-        }
-      }
-    });
-
-    return params;
+    return conditions;
   }
 
   /**
    * Enhanced PostgreSQL error handler for better debugging and user feedback
    */
-  private handlePostgreSQLError(error: any): IPostgreSQLError {
-    const pgError: IPostgreSQLError = {
+  private handlePostgreSQLError(error: any): IPostgreSQLErrorModel {
+    const pgError: IPostgreSQLErrorModel = {
       message: error.message || 'Unknown database error',
       code: error.code,
       detail: error.detail,
@@ -2558,12 +2331,10 @@ export abstract class AbstractRepository<
         pgError.message = `Table not found: ${error.message}`;
         break;
       case '53300': // too_many_connections
-        pgError.message =
-          'Database connection pool exhausted. Please try again.';
+        pgError.message = 'Database connection pool exhausted. Please try again.';
         break;
       case '57014': // query_canceled
-        pgError.message =
-          'Query was canceled due to timeout. Consider optimizing your query.';
+        pgError.message = 'Query was canceled due to timeout. Consider optimizing your query.';
         break;
     }
 
@@ -2576,7 +2347,7 @@ export abstract class AbstractRepository<
    */
   /* eslint-disable-next-line @typescript-eslint/require-await */
   private async logSlowQueryDetails(
-    metrics: IQueryPerformanceMetrics,
+    metrics: IQueryPerformanceMetricsModel,
     queryBuilder?: SelectQueryBuilder<Entity>,
     rawQuery?: string,
     parameters?: any[],
@@ -2619,9 +2390,7 @@ export abstract class AbstractRepository<
         'Consider caching strategy for frequently accessed data',
       ];
 
-      this.logger.error(
-        `CRITICAL Database Performance Issue: ${JSON.stringify(logData)}`,
-      );
+      this.logger.error(`CRITICAL Database Performance Issue: ${JSON.stringify(logData)}`);
 
       //
     } else if (metrics.duration > 2000) {
@@ -2633,9 +2402,7 @@ export abstract class AbstractRepository<
         'Consider result pagination for large datasets',
       ];
 
-      this.logger.warn(
-        `HIGH Priority Database Performance: ${JSON.stringify(logData)}`,
-      );
+      this.logger.warn(`HIGH Priority Database Performance: ${JSON.stringify(logData)}`);
 
       //
     } else if (metrics.duration > 1000) {
@@ -2646,9 +2413,7 @@ export abstract class AbstractRepository<
         'Monitor if this becomes a pattern',
       ];
 
-      this.logger.warn(
-        `Database Performance Notice: ${JSON.stringify(logData)}`,
-      );
+      this.logger.warn(`Database Performance Notice: ${JSON.stringify(logData)}`);
 
       //
     } else if (metrics.duration > 500) {
@@ -2660,9 +2425,7 @@ export abstract class AbstractRepository<
 
       // Only log in development for low severity
       if (this.developmentEnv) {
-        this.logger.debug(
-          `Database Performance Debug: ${JSON.stringify(logData)}`,
-        );
+        this.logger.debug(`Database Performance Debug: ${JSON.stringify(logData)}`);
       }
     }
   }
@@ -2670,15 +2433,11 @@ export abstract class AbstractRepository<
   /**
    * Sanitizes query parameters for safe logging (removes sensitive data)
    */
-  private sanitizeParameters(parameters: any[]): any[] {
-    return parameters.map((param, index) => {
+  private sanitizeParameters(parameters: any[]): unknown[] {
+    return parameters.map((param, index): unknown => {
       if (typeof param === 'string') {
         // Hide potential sensitive data like emails, passwords, tokens
-        if (
-          param.includes('@') ||
-          param.length > 50 ||
-          /password|token|secret|key/i.test(param)
-        ) {
+        if (param.includes('@') || param.length > 50 || /password|token|secret|key/i.test(param)) {
           return `[SANITIZED_STRING_${index}]`;
         }
         // Truncate long strings

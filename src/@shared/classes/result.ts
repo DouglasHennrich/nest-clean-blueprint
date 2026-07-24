@@ -15,11 +15,7 @@ export class Result<T> {
   public error?: AbstractApplicationException | Error;
   private value?: T;
 
-  private constructor(
-    isSuccess: boolean,
-    error?: AbstractApplicationException | Error,
-    value?: T,
-  ) {
+  private constructor(isSuccess: boolean, error?: AbstractApplicationException | Error, value?: T) {
     this.error = error;
     this.value = value;
 
@@ -34,9 +30,7 @@ export class Result<T> {
     return new Result<U>(true, undefined, value);
   }
 
-  public static fail<U>(
-    error: AbstractApplicationException | Error,
-  ): Result<U> {
+  public static fail<U>(error: AbstractApplicationException | Error): Result<U> {
     return new Result<U>(false, error, undefined);
   }
 }

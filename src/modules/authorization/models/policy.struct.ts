@@ -1,10 +1,10 @@
 import { TAppAbility } from '../casl-ability.factory';
 
 /**
- * IPolicyHandler — class-based policy handler.
+ * IPolicyHandlerModel — class-based policy handler.
  * Implement this interface and pass an instance to @CheckPolicies.
  */
-export interface IPolicyHandler {
+export interface IPolicyHandlerModel {
   handle(ability: TAppAbility): boolean;
 }
 
@@ -15,11 +15,9 @@ export interface IPolicyHandler {
  *   @CheckPolicies((ability) => ability.can('read', 'orders'))
  *
  * @example Class-based (reusable across routes):
- *   class ReadOrdersPolicy implements IPolicyHandler {
+ *   class ReadOrdersPolicy implements IPolicyHandlerModel {
  *     handle(ability: TAppAbility) { return ability.can('read', 'orders'); }
  *   }
  *   @CheckPolicies(new ReadOrdersPolicy())
  */
-export type TPolicyHandler =
-  | IPolicyHandler
-  | ((ability: TAppAbility) => boolean);
+export type TPolicyHandler = IPolicyHandlerModel | ((ability: TAppAbility) => boolean);

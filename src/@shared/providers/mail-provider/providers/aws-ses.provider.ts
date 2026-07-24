@@ -6,10 +6,10 @@ import * as path from 'node:path';
 import { Result } from '@/@shared/classes/result';
 import { DefaultException } from '@/@shared/errors/abstract-application-exception';
 import {
-  ICompileTemplateOptions,
-  IMailProviderOptions,
-  ISendRawEmailOptions,
-  ISendTemplateEmailOptions,
+  ICompileTemplateOptionsModel,
+  IMailProviderOptionsModel,
+  ISendRawEmailOptionsModel,
+  ISendTemplateEmailOptionsModel,
   MAIL_PROVIDER_OPTIONS,
   TMailProvider,
 } from '../models/mail-provider.struct';
@@ -26,7 +26,7 @@ export class AwsSesMailProvider implements TMailProvider {
 
   constructor(
     @Inject(MAIL_PROVIDER_OPTIONS)
-    private readonly options: IMailProviderOptions,
+    private readonly options: IMailProviderOptionsModel,
   ) {
     this.client = new SESClient({
       region: this.options.region,
@@ -40,9 +40,7 @@ export class AwsSesMailProvider implements TMailProvider {
     });
   }
 
-  async compileTemplate(
-    opts: ICompileTemplateOptions,
-  ): Promise<Result<string>> {
+  async compileTemplate(opts: ICompileTemplateOptionsModel): Promise<Result<string>> {
     try {
       const absolutePath = path.isAbsolute(opts.templatePath)
         ? opts.templatePath
@@ -52,11 +50,14 @@ export class AwsSesMailProvider implements TMailProvider {
 
       // Resolve partials relative to either the explicit partialsDir or the
       // template file's directory.
-      const root = opts.partialsDir
-        ? path.resolve(opts.partialsDir)
-        : path.dirname(absolutePath);
+      const root = opts.partialsDir ? path.resolve(opts.partialsDir) : path.dirname(absolutePath);
 
-      const html = ejs.render(template, opts.templateData, {
+      // Always provide a fully-keyed defaults object before merging the caller's
+      // templateData so partials referencing bare identifiers (e.g. `appName`)
+      // never throw a ReferenceError when the caller omits the key entirely.
+      const data = { appName: undefined, ...opts.templateData };
+
+      const html = ejs.render(template, data, {
         filename: absolutePath,
         root,
       });
@@ -73,19 +74,11 @@ export class AwsSesMailProvider implements TMailProvider {
     }
   }
 
-  async sendRawEmail(opts: ISendRawEmailOptions): Promise<Result<void>> {
+  async sendRawEmail(opts: ISendRawEmailOptionsModel): Promise<Result<void>> {
     try {
       const toAddresses = Array.isArray(opts.to) ? opts.to : [opts.to];
-      const ccAddresses = opts.cc
-        ? Array.isArray(opts.cc)
-          ? opts.cc
-          : [opts.cc]
-        : undefined;
-      const bccAddresses = opts.bcc
-        ? Array.isArray(opts.bcc)
-          ? opts.bcc
-          : [opts.bcc]
-        : undefined;
+      const ccAddresses = opts.cc ? (Array.isArray(opts.cc) ? opts.cc : [opts.cc]) : undefined;
+      const bccAddresses = opts.bcc ? (Array.isArray(opts.bcc) ? opts.bcc : [opts.bcc]) : undefined;
 
       await this.client.send(
         new SendEmailCommand({
@@ -107,18 +100,12 @@ export class AwsSesMailProvider implements TMailProvider {
       return Result.success();
     } catch (error: any) {
       return Result.fail(
-        new DefaultException(
-          `Failed to send email: ${error.message}`,
-          'MailSendException',
-          500,
-        ),
+        new DefaultException(`Failed to send email: ${error.message}`, 'MailSendException', 500),
       );
     }
   }
 
-  async sendTemplateEmail(
-    opts: ISendTemplateEmailOptions,
-  ): Promise<Result<void>> {
+  async sendTemplateEmail(opts: ISendTemplateEmailOptionsModel): Promise<Result<void>> {
     const compiled = await this.compileTemplate({
       templatePath: opts.templatePath,
       templateData: opts.templateData,

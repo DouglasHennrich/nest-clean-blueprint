@@ -6,7 +6,7 @@ import { IBackofficeAuditLogsRepository } from '../../repositories/audit-logs/au
 import { ILogger } from '@/@shared/classes/custom-logger';
 // import { AccountUserTypeEnum } from '@/modules/accounts/models/account.struct';
 
-export interface IBackofficeCreateBackofficeAuditLogDto {
+export interface IBackofficeCreateBackofficeAuditLogDtoModel {
   // HTTP Context
   method: string;
   path: string;
@@ -62,7 +62,7 @@ export interface IBackofficeCreateBackofficeAuditLogDto {
 }
 
 export abstract class TBackofficeCreateBackofficeAuditLogService extends AbstractService<
-  IBackofficeCreateBackofficeAuditLogDto,
+  IBackofficeCreateBackofficeAuditLogDtoModel,
   IBackofficeAuditLogModel
 > {}
 
@@ -80,7 +80,7 @@ export class BackofficeCreateBackofficeAuditLogService implements TBackofficeCre
   }
 
   /**
-   * Sanitiza dados sensíveis antes de salvar no banco
+   * Sanitizes sensitive data before saving to the database
    */
   private sanitizeData(data: Record<string, any>): Record<string, any> {
     const sensitiveFields = [
@@ -107,60 +107,52 @@ export class BackofficeCreateBackofficeAuditLogService implements TBackofficeCre
   }
 
   async execute(
-    dto: IBackofficeCreateBackofficeAuditLogDto,
+    dto: IBackofficeCreateBackofficeAuditLogDtoModel,
   ): Promise<Result<IBackofficeAuditLogModel>> {
     try {
       const audit = await this.auditLogsRepository.create({
-        method: dto.method,
-        path: dto.path,
-        endpoint: dto.endpoint,
-        statusCode: dto.statusCode,
-        responseTime: dto.responseTime,
-        userId: dto.userId,
-        userEmail: dto.userEmail,
-        userName: dto.userName,
-        // userType: dto.userType as 'USER' | 'ADMIN',
-        professionalId: dto.professionalId,
-        professionalType: dto.professionalType,
-        body: dto.body
-          ? JSON.stringify(this.sanitizeData(dto.body))
-          : undefined,
-        params: dto.params ? JSON.stringify(dto.params) : undefined,
-        query: dto.query ? JSON.stringify(dto.query) : undefined,
-        headers: dto.headers
-          ? JSON.stringify(this.sanitizeData(dto.headers))
-          : undefined,
-        files: dto.files
-          ? /* eslint-disable-next-line @typescript-eslint/no-unsafe-return */
-            JSON.stringify(dto.files.map((f: any) => f.originalname))
-          : undefined,
-        responseSize: dto.responseSize,
-        action: dto.action,
-        entityType: dto.entityType,
-        entityId: dto.entityId,
-        previousData: dto.previousData
-          ? JSON.stringify(dto.previousData)
-          : undefined,
-        newData: dto.newData ? JSON.stringify(dto.newData) : undefined,
-        changedFields: dto.changedFields
-          ? JSON.stringify(dto.changedFields)
-          : undefined,
-        description: dto.description,
-        metadata: dto.metadata ? JSON.stringify(dto.metadata) : undefined,
-        ip: dto.ip,
-        userAgent: dto.userAgent,
-        errorMessage: dto.errorMessage,
-        stackTrace: dto.stackTrace,
-        careAssignmentId: dto.careAssignmentId,
-        patientId: dto.patientId,
+        data: {
+          method: dto.method,
+          path: dto.path,
+          endpoint: dto.endpoint,
+          statusCode: dto.statusCode,
+          responseTime: dto.responseTime,
+          userId: dto.userId,
+          userEmail: dto.userEmail,
+          userName: dto.userName,
+          // userType: dto.userType as 'USER' | 'ADMIN',
+          professionalId: dto.professionalId,
+          professionalType: dto.professionalType,
+          body: dto.body ? JSON.stringify(this.sanitizeData(dto.body)) : undefined,
+          params: dto.params ? JSON.stringify(dto.params) : undefined,
+          query: dto.query ? JSON.stringify(dto.query) : undefined,
+          headers: dto.headers ? JSON.stringify(this.sanitizeData(dto.headers)) : undefined,
+          files: dto.files
+            ? /* eslint-disable-next-line @typescript-eslint/no-unsafe-return */
+              JSON.stringify(dto.files.map((f: any) => f.originalname))
+            : undefined,
+          responseSize: dto.responseSize,
+          action: dto.action,
+          entityType: dto.entityType,
+          entityId: dto.entityId,
+          previousData: dto.previousData ? JSON.stringify(dto.previousData) : undefined,
+          newData: dto.newData ? JSON.stringify(dto.newData) : undefined,
+          changedFields: dto.changedFields ? JSON.stringify(dto.changedFields) : undefined,
+          description: dto.description,
+          metadata: dto.metadata ? JSON.stringify(dto.metadata) : undefined,
+          ip: dto.ip,
+          userAgent: dto.userAgent,
+          errorMessage: dto.errorMessage,
+          stackTrace: dto.stackTrace,
+          careAssignmentId: dto.careAssignmentId,
+          patientId: dto.patientId,
+        },
       });
 
       return Result.success(audit);
     } catch (error) {
-      // Nunca falhar a requisição principal por erro no audit
-      this.logger.error(
-        `Failed to create audit log: ${(error as Error).message}`,
-      );
+      // Never fail the main request due to an audit error
+      this.logger.error(`Failed to create audit log: ${(error as Error).message}`);
       return Result.success({} as IBackofficeAuditLogModel);
     }
   }

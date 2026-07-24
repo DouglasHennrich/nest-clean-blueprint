@@ -44,18 +44,23 @@ Each entity gets its own folder with this layer set. Cross-cutting concerns (aut
 
 | Element | Pattern | Example |
 |---|---|---|
-| File | `[action]-[entity].service.ts` | `create-order.service.ts` |
+| File — service | `[action]-[entity].service.ts` | `create-order.service.ts` |
+| File — model | `[entity].struct.ts` | `order.struct.ts` |
 | Entity file | `[entity].entity.ts` | `order.entity.ts` |
 | Repository file | `[entities-plural].repository.ts` | `orders.repository.ts` |
+| Exception file (one class per file) | `[reason].exception.ts` | `order-not-found.exception.ts` |
 | Abstract DI token | `T[Action][Entity]Service` | `TCreateOrderService` |
 | Repository token | `I[EntitiesPlural]Repository` | `IOrdersRepository` |
 | Model interface | `I[Entity]Model` | `IOrderModel` |
 | Presenter token | `I[Entity]Presenter` | `IOrderPresenter` |
 | Concrete class | `[Action][Entity]Service` | `CreateOrderService` |
-| DTO schema | `[action][Entity]Dto[Type]Schema` | `createOrderDtoBodySchema` |
-| DTO type alias | `T[Action][Entity]Dto[Type]Schema` | `TCreateOrderDtoBodySchema` |
+| Custom exception class | `[Reason]Exception` | `OrderNotFoundException` |
+| DTO schema | `[action][Entity]DtoSchema` | `createOrderDtoSchema` |
+| DTO type alias | `T[Action][Entity]Dto` | `TCreateOrderDto` |
 
-`Type` ∈ `Body` · `Query` · `Param` · `Service`.
+Every model interface is suffixed `Model` (`I...Model`) — never a bare `I...` interface.
+One Zod schema/type pair per controller action file; one exception class per file. See
+[docs/conventions/naming.md](./conventions/naming.md) for the full table.
 
 ---
 
@@ -67,13 +72,15 @@ orders/
 ├── dto/                Zod schemas + type aliases
 ├── entities/           TypeORM @Entity classes
 ├── enums/
-├── errors/             custom exceptions
-├── models/             I<Entity>Model interfaces
-├── presenters/         response shape transformers
-├── repositories/       extends AbstractRepository
+├── errors/             one exception class PER FILE, extending AbstractApplicationException
+├── models/             I<Entity>Model interfaces (file named `[entity].struct.ts`)
+├── presenters/         response shape transformers — abstract token + useClass, no @Injectable
+├── repositories/       abstract token extends AbstractRepository
 ├── services/           one class per action
 └── orders.module.ts    NestJS module
 ```
+
+`src/modules/_example_orders/` is the canonical, fully wired reference — mirror its shape.
 
 ---
 
@@ -89,17 +96,16 @@ async execute(): Promise<Result<IOrderModel>> {
 }
 ```
 
-Controllers unwrap and re-throw with context attached:
+Controllers unwrap and re-throw. There is no `context` parameter to attach —
+`AbstractApplicationException` reads `RequestContext.getContext()` itself in its
+constructor (see [§9](#9-logging-and-request-correlation)):
 
 ```typescript
-const result = await this.service.execute(dto, context);
+const result = await this.service.execute(dto);
 if (result.error) {
-  if (result.error instanceof AbstractApplicationException) {
-    result.error.context = context;
-  }
   throw result.error;
 }
-return this.presenter.present(result.getValue()!);
+return this.presenter.present({ entity: result.getValue()! });
 ```
 
 If a service calls another service, propagate failure: `if (inner.error) return Result.fail(inner.error);`
@@ -112,7 +118,7 @@ Each service exposes an **abstract class token** (the `T...Service`). The module
 
 ```typescript
 // service file
-export abstract class TCreateOrderService extends AbstractService<TCreateOrderDtoServiceSchema, IOrderModel> {}
+export abstract class TCreateOrderService extends AbstractService<TCreateOrderDto, IOrderModel> {}
 
 @Injectable()
 export class CreateOrderService implements TCreateOrderService { /* … */ }
@@ -122,6 +128,16 @@ providers: [{ provide: TCreateOrderService, useClass: CreateOrderService }]
 
 // consumer
 constructor(private createOrderService: TCreateOrderService) {}
+```
+
+Presenters follow the identical pattern — abstract token extends `AbstractPresenter<Model,
+Response>`, concrete class has **no** `@Injectable()`, wired via `useClass`:
+
+```typescript
+export abstract class IOrderPresenter extends AbstractPresenter<IOrderModel, IOrderPresenterResponseModel> {}
+export class OrderPresenter extends IOrderPresenter { present({ entity }) { /* … */ } }
+
+providers: [{ provide: IOrderPresenter, useClass: OrderPresenter }]
 ```
 
 Group constructor dependencies with banner comments:
@@ -177,41 +193,41 @@ Every `@Body()`, `@Query()` and `@Param()` MUST be wrapped in `ZodValidationPipe
 
 ```typescript
 async createOrder(
-  @Body(new ZodValidationPipe(createOrderDtoBodySchema))
-  dto: TCreateOrderDtoBodySchema,
+  @Body(new ZodValidationPipe(createOrderDtoSchema))
+  dto: TCreateOrderDto,
 ) {}
 
 async listOrders(
-  @Query(new ZodValidationPipe(listOrdersDtoQuerySchema))
-  query: TListOrdersDtoQuerySchema,
+  @Query(new ZodValidationPipe(listOrdersDtoSchema))
+  query: TListOrdersDto,
 ) {}
 
 async getOrder(
-  @Param(new ZodValidationPipe(getOrderDtoParamSchema))
-  param: TGetOrderDtoParamSchema,
+  @Param(new ZodValidationPipe(getOrderDtoSchema))
+  param: TGetOrderDto,
 ) {}
 ```
 
-DTO file holds the schema AND the inferred type — no DTO class.
+Each DTO file holds exactly one action's schema AND its inferred type — no DTO class, one
+file per controller action (`create-order.dto.ts`, `get-order.dto.ts`, ...).
 
 ---
 
 ## 8. Pagination (mandatory for list endpoints)
 
-List services MUST return `IPagination<T>` and inject `TEnvService` to read the default page size:
+List services MUST return `IPaginationModel<T>` (from `@/@shared/classes/repository`).
+`AbstractRepository` itself sources the default page size from `TEnvService`
+(`UTILITIES_PAGINATION_LIMIT`), so services simply forward `page`/`offset`:
 
 ```typescript
 export abstract class TListOrdersService extends AbstractService<
-  TListOrdersDtoServiceSchema,
-  IPagination<IOrderModel>
+  TListOrdersDto,
+  IPaginationModel<IOrderModel>
 > {}
 
-async execute({
-  page = 1,
-  offset = this.envService.get('UTILITIES_PAGINATION_LIMIT'),
-  status,
-}: TListOrdersDtoServiceSchema): Promise<Result<IPagination<IOrderModel>>> {
-  return Result.success(await this.repo.find({ where: { status }, page, offset }));
+async execute({ page, offset, status }: TListOrdersDto): Promise<Result<IPaginationModel<IOrderModel>>> {
+  const where = status ? { status } : undefined;
+  return Result.success(await this.ordersRepository.find({ where, page, offset }));
 }
 ```
 
@@ -219,32 +235,41 @@ async execute({
 
 ## 9. Logging and request correlation
 
-`RequestIdMiddleware` runs first and seeds `AsyncContext` with a UUID Correlation ID. Every log line gets tagged automatically:
+`RequestContextMiddleware` runs first and seeds `RequestContext` (an `AsyncLocalStorage`
+wrapper, see [docs/patterns/request-context.md](./patterns/request-context.md)) with a
+UUID Correlation ID. Every log line gets tagged automatically:
 
 ```
 [CreateOrderService][b1cb6536-2d7a-49eb-b822-c374c34bdac8] Creating order for John Doe
 ```
 
-Use `ILogger` everywhere:
+Inject `ILogger` (the DI token; `CustomLogger` is the concrete implementation) and set the
+context name in the constructor — never pass request context as a parameter, it's read
+internally via `RequestContext`:
 
 ```typescript
-public logger: ILogger = new CustomLogger(CreateOrderService.name);
+constructor(private ordersRepository: IOrdersRepository, public logger: ILogger) {
+  this.logger.setContextName(CreateOrderService.name);
+}
 
-this.logger.log(`Creating order: ${JSON.stringify(dto)}`, context);
-this.logger.warn('Order is below minimum amount', context);
-this.logger.error(`Failed: ${error.message}`, context);
+this.logger.log(`Creating order for ${dto.customerName}`);
+this.logger.warn('Order is below minimum amount');
+this.logger.error(`Failed: ${error.message}`);
 ```
 
 ---
 
 ## 10. Custom exceptions
 
-Every domain error extends `AbstractApplicationException`:
+Every domain error extends `AbstractApplicationException`, one exception class per file
+under `errors/`. There is no `context` constructor parameter — the base class reads
+`RequestContext.getContext()` internally:
 
 ```typescript
+// errors/order-not-found.exception.ts
 export class OrderNotFoundException extends AbstractApplicationException {
-  constructor(id: string, context?: IRequestContext) {
-    super(`Order with id ${id} not found`, 'OrderNotFoundException', HttpStatus.NOT_FOUND, context);
+  constructor(id: string) {
+    super(`Order with id ${id} not found`, 'OrderNotFoundException', HttpStatus.NOT_FOUND);
   }
 }
 ```

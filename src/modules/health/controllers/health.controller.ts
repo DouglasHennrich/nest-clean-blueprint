@@ -6,7 +6,8 @@ import {
   MemoryHealthIndicator,
   DiskHealthIndicator,
 } from '@nestjs/terminus';
-import { Public } from '@/@decorators/public.decorator';
+import { Public } from '@/@shared/decorators/public.decorator';
+import { IHealthPresenter } from '../presenters/health.presenter';
 
 /**
  * HealthController
@@ -27,12 +28,13 @@ export class HealthController {
     private readonly db: TypeOrmHealthIndicator,
     private readonly memory: MemoryHealthIndicator,
     private readonly disk: DiskHealthIndicator,
+    private readonly healthPresenter: IHealthPresenter,
   ) {}
 
   @Get()
   @HealthCheck()
-  check() {
-    return this.health.check([
+  async check() {
+    const result = await this.health.check([
       () => this.db.pingCheck('database', { timeout: 1500 }),
       () => this.memory.checkRSS('mem_rss', 1024 * 2 ** 20),
       () => this.memory.checkHeap('mem_heap', 512 * 2 ** 20),
@@ -42,5 +44,7 @@ export class HealthController {
           thresholdPercent: 0.9,
         }),
     ]);
+
+    return this.healthPresenter.present({ entity: result });
   }
 }

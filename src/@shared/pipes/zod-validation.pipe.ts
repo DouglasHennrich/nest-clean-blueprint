@@ -21,9 +21,7 @@ export class ZodValidationPipe implements PipeTransform {
       if (error instanceof ZodError) {
         throw error;
       }
-      throw new ZodError([
-        { code: 'custom', path: [], message: 'Validation failed' },
-      ]);
+      throw new ZodError([{ code: 'custom', path: [], message: 'Validation failed' }]);
     }
   }
 }

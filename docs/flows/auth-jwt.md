@@ -10,8 +10,8 @@ Stateless JWT authentication using RS256 asymmetric keys. Every incoming request
 | `src/modules/authenticate/services/jwt-strategy.service.ts` | Passport strategy that validates the Bearer token and sets `req.currentUser` |
 | `src/modules/authenticate/guard/jwt-authenticate.guard.ts` | Global guard — checks `@Public()` first, then calls `super.canActivate()` |
 | `src/modules/authenticate/models/current-user.struct.ts` | `TCurrentUser` interface (`{ id: string; [key: string]: unknown }`) |
-| `src/@shared/modules/cryptography/cryptography.module.ts` | Provides `THasher` (bcrypt) and `TEncrypter` (JWT sign/verify) |
-| `src/@shared/modules/cryptography/services/bcrypt-hasher.service.ts` | `BcryptHasher` — `hash()` + `compare()`, saltRounds=10 |
+| `src/@shared/modules/cryptography/cryptography.module.ts` | Provides `THasher` (argon2) and `TEncrypter` (JWT sign/verify) |
+| `src/@shared/modules/cryptography/services/argon2-hasher.service.ts` | `Argon2Hasher` — `hash()` + `compare()`, using `argon2.argon2id` |
 | `src/@shared/modules/cryptography/services/jwt-encrypter.service.ts` | `JwtEncrypter` — `encrypt()` (signAsync) + `decrypt()` (verifyAsync) |
 | `src/@decorators/public.decorator.ts` | `@Public()` — marks a route as unauthenticated |
 | `src/@decorators/current-user.decorator.ts` | `@CurrentUser()` — extracts `req.currentUser` in controllers |
@@ -35,7 +35,7 @@ base64 -i public.pem  | tr -d '\n'
 
 ## How authentication works
 
-1. `RequestIdMiddleware` seeds `AsyncContext` with a UUID (`req.requestId`)
+1. `RequestContextMiddleware` seeds `RequestContext` with a UUID (`req.requestId`)
 2. `JwtAuthenticateGuard` (global `APP_GUARD`) runs on every request
 3. Guard reads `IS_PUBLIC_KEY` via `Reflector` — if `@Public()` is set, returns `true` immediately
 4. For protected routes: `super.canActivate()` triggers `JwtStrategy.validate()`

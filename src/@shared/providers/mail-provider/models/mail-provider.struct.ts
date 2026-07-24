@@ -14,13 +14,13 @@ import { Result } from '@/@shared/classes/result';
  * See docs/providers/mail-provider.md for the full guide.
  */
 
-export interface IEmailAttachment {
+export interface IEmailAttachmentModel {
   filename: string;
   content: string | Buffer;
   contentType?: string;
 }
 
-export interface ISendTemplateEmailOptions {
+export interface ISendTemplateEmailOptionsModel {
   to: string | string[];
   subject: string;
   /** Path to the .ejs template file (absolute or relative to partialsDir). */
@@ -31,40 +31,36 @@ export interface ISendTemplateEmailOptions {
   from?: string;
   cc?: string | string[];
   bcc?: string | string[];
-  attachments?: IEmailAttachment[];
+  attachments?: IEmailAttachmentModel[];
 }
 
-export interface ICompileTemplateOptions {
+export interface ICompileTemplateOptionsModel {
   templatePath: string;
   templateData: Record<string, any>;
   partialsDir?: string;
 }
 
-export interface ISendRawEmailOptions {
+export interface ISendRawEmailOptionsModel {
   to: string | string[];
   subject: string;
   html: string;
   from?: string;
   cc?: string | string[];
   bcc?: string | string[];
-  attachments?: IEmailAttachment[];
+  attachments?: IEmailAttachmentModel[];
 }
 
 export abstract class TMailProvider {
-  abstract sendTemplateEmail(
-    options: ISendTemplateEmailOptions,
-  ): Promise<Result<void>>;
+  abstract sendTemplateEmail(options: ISendTemplateEmailOptionsModel): Promise<Result<void>>;
 
-  abstract sendRawEmail(options: ISendRawEmailOptions): Promise<Result<void>>;
+  abstract sendRawEmail(options: ISendRawEmailOptionsModel): Promise<Result<void>>;
 
-  abstract compileTemplate(
-    options: ICompileTemplateOptions,
-  ): Promise<Result<string>>;
+  abstract compileTemplate(options: ICompileTemplateOptionsModel): Promise<Result<string>>;
 }
 
 export const MAIL_PROVIDER_OPTIONS = 'MAIL_PROVIDER_OPTIONS';
 
-export interface IMailProviderOptions {
+export interface IMailProviderOptionsModel {
   region: string;
   accessKeyId?: string;
   secretAccessKey?: string;

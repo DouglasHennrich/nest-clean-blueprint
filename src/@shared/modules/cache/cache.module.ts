@@ -4,10 +4,7 @@ import { createKeyv } from '@keyv/redis';
 import { EnvModule } from '@/modules/env/env.module';
 import { TEnvService } from '@/modules/env/services/env.service';
 import { RedisConnectionHelper } from '@/@shared/helpers/redis-connection.helper';
-import {
-  TDataCacheService,
-  DataCacheService,
-} from './services/data-cache.service';
+import { TDataCacheService, DataCacheService } from './services/data-cache.service';
 
 @Global()
 @Module({

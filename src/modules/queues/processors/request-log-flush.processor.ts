@@ -7,7 +7,7 @@ import { IBackofficeRequestLogsRepository } from '@/modules/backoffice/repositor
 import {
   REQUEST_LOG_REDIS_CLIENT,
   REQUEST_LOG_REDIS_LIST_KEY,
-  IRequestLogPayload,
+  IRequestLogPayloadModel,
 } from '../services/request-log-flush-scheduler.service';
 
 /**
@@ -47,11 +47,7 @@ export class RequestLogFlushProcessor extends WorkerHost {
     let rawItems: string[];
 
     try {
-      rawItems = await this.redisClient.lrange(
-        REQUEST_LOG_REDIS_LIST_KEY,
-        0,
-        -1,
-      );
+      rawItems = await this.redisClient.lrange(REQUEST_LOG_REDIS_LIST_KEY, 0, -1);
     } catch (error) {
       const msg = `Failed to LRANGE Redis list: ${(error as Error).message}`;
       await job.log(msg);
@@ -66,13 +62,11 @@ export class RequestLogFlushProcessor extends WorkerHost {
 
     await job.log(`Read ${rawItems.length} items from Redis list`);
 
-    const payloads: IRequestLogPayload[] = [];
+    const payloads: IRequestLogPayloadModel[] = [];
 
     for (const raw of rawItems) {
       try {
-        payloads.push(
-          this.truncatePayload(JSON.parse(raw) as IRequestLogPayload),
-        );
+        payloads.push(this.truncatePayload(JSON.parse(raw) as IRequestLogPayloadModel));
       } catch {
         this.logger.warn(`Skipping malformed request log payload: ${raw}`);
       }
@@ -103,11 +97,7 @@ export class RequestLogFlushProcessor extends WorkerHost {
 
     // INSERT succeeded — now safely remove the processed items
     try {
-      await this.redisClient.ltrim(
-        REQUEST_LOG_REDIS_LIST_KEY,
-        rawItems.length,
-        -1,
-      );
+      await this.redisClient.ltrim(REQUEST_LOG_REDIS_LIST_KEY, rawItems.length, -1);
     } catch (error) {
       // Non-fatal: items are already persisted, LTRIM failure only causes duplicates on retry
       this.logger.warn(
@@ -116,11 +106,8 @@ export class RequestLogFlushProcessor extends WorkerHost {
     }
   }
 
-  private truncatePayload(payload: IRequestLogPayload): IRequestLogPayload {
-    const t = (
-      value: string | undefined,
-      limit: number,
-    ): string | undefined => {
+  private truncatePayload(payload: IRequestLogPayloadModel): IRequestLogPayloadModel {
+    const t = (value: string | undefined, limit: number): string | undefined => {
       if (typeof value === 'string' && value.length > limit) {
         return value.slice(0, limit);
       }

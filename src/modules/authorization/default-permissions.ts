@@ -15,12 +15,7 @@ export enum UserRoleEnum {
 
 export const DEFAULT_PERMISSIONS: Record<UserRoleEnum, string[]> = {
   [UserRoleEnum.ADMIN]: ['manage:all'],
-  [UserRoleEnum.MANAGER]: [
-    'manage:orders',
-    'manage:items',
-    'manage:catalogs',
-    'manage:widgets',
-  ],
+  [UserRoleEnum.MANAGER]: ['manage:orders', 'manage:items', 'manage:catalogs', 'manage:widgets'],
   [UserRoleEnum.OPERATOR]: ['read:orders', 'write:items', 'read:catalogs'],
   [UserRoleEnum.VIEWER]: ['read:orders', 'read:items', 'read:catalogs'],
   [UserRoleEnum.GUEST]: [],

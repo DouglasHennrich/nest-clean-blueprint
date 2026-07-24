@@ -9,7 +9,7 @@
 
 Este repositório **não é um framework**. É um **bootstrap** — um esqueleto de projeto NestJS contendo:
 
-- Classes base (`Result`, `AbstractRepository`, `AbstractService`, `AbstractPresenter`, `AbstractEventListener`, `ILogger`, `AsyncContext`).
+- Classes base (`Result`, `AbstractRepository`, `AbstractService`, `AbstractPresenter`, `AbstractEventListener`, `ILogger`, `RequestContext`).
 - Infra compartilhada (middlewares, pipes, decorators, exceptions).
 - 3 providers prontos (AWS SES + EJS, Node `crypto`, AWS S3).
 - 1 módulo de exemplo (`orders`) demonstrando **todos** os patterns end-to-end.
@@ -126,7 +126,7 @@ pnpm build
 | Tool | O que retorna |
 |---|---|
 | `get_blueprint` | `docs/ARCHITECTURE-BLUEPRINT.md` completo |
-| `list_patterns` / `get_pattern <name>` | Patterns: result-pattern, dependency-injection, pagination, async-context, event-driven |
+| `list_patterns` / `get_pattern <name>` | Patterns: result-pattern, dependency-injection, pagination, request-context, event-driven |
 | `list_conventions` / `get_convention <name>` | naming, module-structure, testing |
 | `list_providers` / `get_provider_docs <name>` | mail-provider, encrypt-decrypt-provider, upload-provider |
 | `list_templates` / `get_template <layer>` | Scaffolding `.hbs`: service, controller, repository, presenter, entity, dto, exception, module |
@@ -149,7 +149,7 @@ Documentação completa em [`docs/`](./docs/):
   - [Result pattern](./docs/patterns/result-pattern.md)
   - [Dependency Injection via abstract tokens](./docs/patterns/dependency-injection.md)
   - [Pagination](./docs/patterns/pagination.md)
-  - [AsyncContext (correlation ID)](./docs/patterns/async-context.md)
+  - [RequestContext (correlation ID)](./docs/patterns/request-context.md)
   - [Event-driven communication](./docs/patterns/event-driven.md)
 - Conventions:
   - [Naming](./docs/conventions/naming.md)
@@ -175,12 +175,12 @@ Em [`src/@shared/`](./src/@shared/):
 | `AbstractPresenter<M, R>` | `classes/presenter.ts` | `present` / `presentMany` / `presentWithoutRelations` |
 | `AbstractEventListener<Dto>` | `classes/event-listener.ts` | Contrato `handle(event)` para `@OnEvent` |
 | `ILogger` / `CustomLogger` | `classes/custom-logger.ts` | Log estruturado com correlation ID |
-| `AsyncContext` | `classes/async-context.ts` | AsyncLocalStorage para requestId/userId/timezone |
+| `RequestContext` | `context/request.context.ts` | AsyncLocalStorage para requestId/userId/timezone |
 | `AbstractApplicationException` | `errors/abstract-application-exception.ts` | Base de toda exception customizada |
 | `ZodValidationPipe` | `pipes/zod-validation.pipe.ts` | Pipe de validação inline em `@Body/@Query/@Param` |
-| `RequestIdMiddleware` | `middlewares/request-id.middleware.ts` | Semeia correlation ID por request |
-| `@ReqContext()` | `@decorators/request-context.decorator.ts` | Constrói `IRequestContext` no controller |
-| `@User()` | `@decorators/current-user.decorator.ts` | Extrai usuário autenticado |
+| `RequestContextMiddleware` | `middlewares/request-context.middleware.ts` | Semeia correlation ID e contexto de requisição por request |
+| `@ReqContext()` | `@shared/decorators/request-context.decorator.ts` | Constrói `IRequestContextModel` no controller |
+| `@User()` | `@shared/decorators/current-user.decorator.ts` | Extrai usuário autenticado |
 
 ---
 
@@ -225,7 +225,7 @@ Resumo:
 - Apenas controllers lançam (e anexam `context` antes)
 - Toda entrada validada com `ZodValidationPipe` inline
 - Path completo em `@Controller`, decorators HTTP vazios
-- List services retornam `IPagination<T>` e injetam `TEnvService`
+- List services retornam `IPaginationModel<T>` e injetam `TEnvService`
 - Migrations criadas manualmente (`migration:create`, **nunca** `:generate`)
 - Erros testados via `toBeInstanceOf`, nunca por mensagem
 - `pnpm check && pnpm lint && pnpm test:unit` passam

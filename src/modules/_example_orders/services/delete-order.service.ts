@@ -2,19 +2,13 @@ import { Injectable } from '@nestjs/common';
 import { AbstractService } from '@/@shared/classes/service';
 import { Result } from '@/@shared/classes/result';
 import { ILogger } from '@/@shared/classes/custom-logger';
-import { IRequestContext } from '@/@shared/protocols/request-context.struct';
 import { IOrdersRepository } from '../repositories/orders.repository';
-import {
-  OrderAlreadyCancelledException,
-  OrderNotFoundException,
-} from '../errors/order.errors';
+import { OrderAlreadyCancelledException } from '../errors/order-already-cancelled.exception';
+import { OrderNotFoundException } from '../errors/order-not-found.exception';
 import { OrderStatusEnum } from '../enums/order-status.enum';
-import { TDeleteOrderDtoParamSchema } from '../dto/order.dto';
+import { deleteOrderDtoSchema, TDeleteOrderDto } from '../dto/delete-order.dto';
 
-export abstract class TDeleteOrderService extends AbstractService<
-  TDeleteOrderDtoParamSchema,
-  void
-> {}
+export abstract class TDeleteOrderService extends AbstractService<TDeleteOrderDto, void> {}
 
 @Injectable()
 export class DeleteOrderService implements TDeleteOrderService {
@@ -32,18 +26,19 @@ export class DeleteOrderService implements TDeleteOrderService {
     this.logger.setContextName(DeleteOrderService.name);
   }
 
-  async execute(
-    { id }: TDeleteOrderDtoParamSchema,
-    context?: IRequestContext,
-  ): Promise<Result<void>> {
-    this.logger.log(`Deleting order ${id}`, context);
+  async execute(dto: TDeleteOrderDto): Promise<Result<void>> {
+    const invalid = AbstractService.validateDto(deleteOrderDtoSchema, dto);
+    if (invalid) return Result.fail(invalid.error!);
 
-    const existing = await this.ordersRepository.findById(id);
+    const { id } = dto;
+    this.logger.log(`Deleting order ${id}`);
+
+    const existing = await this.ordersRepository.findById({ id });
     if (!existing) {
-      return Result.fail(new OrderNotFoundException(id, context));
+      return Result.fail(new OrderNotFoundException(id));
     }
     if (existing.status === OrderStatusEnum.CANCELLED) {
-      return Result.fail(new OrderAlreadyCancelledException(id, context));
+      return Result.fail(new OrderAlreadyCancelledException(id));
     }
 
     await this.ordersRepository.softDelete(id);

@@ -1,0 +1,6 @@
+dist/
+node_modules/
+pnpm-lock.yaml
+coverage/
+mcp-server/dist
+mcp-server/node_modules

@@ -5,10 +5,22 @@ import globals from "globals";
 import tseslint from "typescript-eslint";
 import importHelpers from "eslint-plugin-import-helpers";
 import unusedImports from "eslint-plugin-unused-imports";
+import localRules from "./eslint-local-rules/index.mjs";
 
 export default tseslint.config(
   {
-    ignores: ["eslint.config.mjs"],
+    ignores: [
+      "eslint.config.mjs",
+      "eslint-local-rules/**",
+      "jest.config.js",
+      "dist/**",
+      "coverage/**",
+      "templates/**",
+      "mcp-server/dist/**",
+      "mcp-server/node_modules/**",
+      "skills/**",
+      ".claude/**",
+    ],
   },
   eslint.configs.recommended,
   ...tseslint.configs.recommendedTypeChecked,
@@ -41,17 +53,34 @@ export default tseslint.config(
       "@typescript-eslint/restrict-template-expressions": "off",
       "@typescript-eslint/no-unsafe-assignment": "off",
       "@typescript-eslint/no-unsafe-member-access": "off",
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        {
+          vars: "all",
+          varsIgnorePattern: "^_",
+          args: "after-used",
+          argsIgnorePattern: "^_",
+          destructuredArrayIgnorePattern: "^_",
+          ignoreRestSiblings: true,
+        },
+      ],
       "@typescript-eslint/naming-convention": [
         "error",
         {
           selector: "interface",
           format: ["PascalCase"],
           prefix: ["I"],
+          suffix: ["Model"],
         },
         {
           selector: "typeAlias",
           format: ["PascalCase"],
           prefix: ["T"],
+        },
+        {
+          selector: "enum",
+          format: ["PascalCase"],
+          suffix: ["Enum"],
         },
       ],
       "unused-imports/no-unused-imports": "error",
@@ -66,6 +95,21 @@ export default tseslint.config(
           ignoreRestSiblings: true,
         },
       ],
+    },
+  },
+  {
+    files: ["**/*.spec.ts", "**/*.spec.e2e.ts", "tests/**/*.ts"],
+    rules: {
+      "@typescript-eslint/unbound-method": "off",
+    },
+  },
+  {
+    files: ["**/*.controller.ts"],
+    plugins: {
+      local: localRules,
+    },
+    rules: {
+      "local/require-presenter-usage": "error",
     },
   },
 );

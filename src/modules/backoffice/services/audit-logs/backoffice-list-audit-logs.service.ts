@@ -3,7 +3,7 @@ import { Result } from '@/@shared/classes/result';
 import { AbstractService } from '@/@shared/classes/service';
 import { IBackofficeAuditLogModel } from '../../models/audit-logs/backoffice-audit-log.struct';
 import { IBackofficeAuditLogsRepository } from '../../repositories/audit-logs/audit-logs.repository';
-import { IPagination } from '@/@shared/classes/repository';
+import { IPaginationModel } from '@/@shared/classes/repository';
 import { TEnvService } from '@/modules/env/services/env.service';
 import { Between, FindOptionsWhere } from 'typeorm';
 import { BackofficeAuditLogEntity } from '@/modules/backoffice/entities/audit-logs/backoffice-audit-log.entity';
@@ -12,7 +12,7 @@ import { TBackofficeListBackofficeAuditLogsDtoQuerySchema } from '../../dto/audi
 
 export abstract class TBackofficeListBackofficeAuditLogsService extends AbstractService<
   TBackofficeListBackofficeAuditLogsDtoQuerySchema,
-  IPagination<IBackofficeAuditLogModel>
+  IPaginationModel<IBackofficeAuditLogModel>
 > {}
 
 @Injectable()
@@ -51,7 +51,7 @@ export class BackofficeListBackofficeAuditLogsService implements TBackofficeList
     careAssignmentId,
     patientId,
   }: TBackofficeListBackofficeAuditLogsDtoQuerySchema): Promise<
-    Result<IPagination<IBackofficeAuditLogModel>>
+    Result<IPaginationModel<IBackofficeAuditLogModel>>
   > {
     this.logger.log('Listing audit logs from backoffice');
 

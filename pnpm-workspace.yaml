@@ -2,9 +2,10 @@ packages:
   - "."
   - "mcp-server"
 
-allowBuilds:
-  '@nestjs/core': true
-  '@scarf/scarf': true
-  '@swc/core': true
-  esbuild: true
-  msgpackr-extract: true
+onlyBuiltDependencies:
+  - "@nestjs/core"
+  - "@scarf/scarf"
+  - "@swc/core"
+  - argon2
+  - esbuild
+  - msgpackr-extract

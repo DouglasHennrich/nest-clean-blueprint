@@ -1,17 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import {
-  AbilityBuilder,
-  MongoAbility,
-  createMongoAbility,
-} from '@casl/ability';
+import { AbilityBuilder, MongoAbility, createMongoAbility } from '@casl/ability';
 import { TCurrentUser } from '@/modules/authenticate/models/current-user.struct';
 
-export const PERMISSIONS_ACTIONS = [
-  'manage',
-  'read',
-  'write',
-  'delete',
-] as const;
+export const PERMISSIONS_ACTIONS = ['manage', 'read', 'write', 'delete'] as const;
 export const PERMISSIONS_RESOURCES = [
   'all',
   'orders',
@@ -24,9 +15,7 @@ export const PERMISSIONS_RESOURCES = [
 export type TPermissionsActions = (typeof PERMISSIONS_ACTIONS)[number];
 export type TPermissionsSubjects = (typeof PERMISSIONS_RESOURCES)[number];
 
-export type TAppAbility = MongoAbility<
-  [TPermissionsActions, TPermissionsSubjects]
->;
+export type TAppAbility = MongoAbility<[TPermissionsActions, TPermissionsSubjects]>;
 
 /**
  * CaslAbilityFactory
@@ -68,8 +57,10 @@ export class CaslAbilityFactory {
     }
 
     return build({
-      detectSubjectType: (item: any) =>
-        typeof item === 'string' ? item : item.__caslSubjectType__,
+      detectSubjectType: (item: any): any =>
+        typeof item === 'string'
+          ? item
+          : (item as { __caslSubjectType__: string }).__caslSubjectType__,
     });
   }
 }

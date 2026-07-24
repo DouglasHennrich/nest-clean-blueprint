@@ -10,3 +10,9 @@ coverage/
 mcp-server/dist/
 mcp-server/node_modules/
 tmp/
+
+# spex: generated/local files (only constitution is committed)
+**/.claude/
+**/.specify/**
+!**/.specify/memory/
+!**/.specify/memory/constitution.md

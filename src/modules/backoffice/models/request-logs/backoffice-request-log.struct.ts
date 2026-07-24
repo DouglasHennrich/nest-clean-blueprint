@@ -16,13 +16,13 @@ export interface IBackofficeRequestLogModel {
   body?: string; // JSON string
   params?: string; // JSON string
   query?: string; // JSON string
-  headers?: string; // JSON string (sanitized - sem tokens/passwords)
-  files?: string; // JSON string com metadados dos arquivos
-  file?: string; // JSON string com metadados do arquivo único
+  headers?: string; // JSON string (sanitized - no tokens/passwords)
+  files?: string; // JSON string with file metadata
+  file?: string; // JSON string with single-file metadata
 
   // Response info
   statusCode?: number;
-  responseTime?: number; // em ms
+  responseTime?: number; // in ms
 
   // Network info
   ip?: string;

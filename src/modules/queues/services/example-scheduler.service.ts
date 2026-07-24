@@ -3,16 +3,13 @@ import { Injectable } from '@nestjs/common';
 import { Queue } from 'bullmq';
 import { ILogger } from '@/@shared/classes/custom-logger';
 import { Result } from '@/@shared/classes/result';
-import { IExampleJobData } from '../dto/example-job.dto';
+import { IExampleJobDataModel } from '../dto/example-job.dto';
 
 /**
  * TExampleSchedulerService — DI token for the example queue scheduler.
  */
 export abstract class TExampleSchedulerService {
-  abstract enqueue(
-    data: IExampleJobData,
-    idempotencyKey?: string,
-  ): Promise<Result<void>>;
+  abstract enqueue(data: IExampleJobDataModel, idempotencyKey?: string): Promise<Result<void>>;
 }
 
 @Injectable()
@@ -24,10 +21,7 @@ export class ExampleSchedulerService implements TExampleSchedulerService {
     this.logger.setContextName(ExampleSchedulerService.name);
   }
 
-  async enqueue(
-    data: IExampleJobData,
-    idempotencyKey?: string,
-  ): Promise<Result<void>> {
+  async enqueue(data: IExampleJobDataModel, idempotencyKey?: string): Promise<Result<void>> {
     try {
       const jobId = idempotencyKey ?? `example-${data.entityId}`;
 
@@ -36,9 +30,7 @@ export class ExampleSchedulerService implements TExampleSchedulerService {
       if (existing) {
         const state = await existing.getState();
         if (['active', 'waiting', 'delayed'].includes(state)) {
-          this.logger.warn(
-            `Job ${jobId} already in state ${state} — skipping enqueue`,
-          );
+          this.logger.warn(`Job ${jobId} already in state ${state} — skipping enqueue`);
           return Result.success();
         }
       }

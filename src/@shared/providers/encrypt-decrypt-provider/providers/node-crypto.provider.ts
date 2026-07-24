@@ -2,7 +2,7 @@ import * as crypto from 'node:crypto';
 import { Inject, Injectable } from '@nestjs/common';
 import {
   ENCRYPT_DECRYPT_PROVIDER_OPTIONS,
-  IEncryptDecryptProviderOptions,
+  IEncryptDecryptProviderOptionsModel,
   TEncryptDecryptProvider,
 } from '../models/encrypt-decrypt-provider.struct';
 
@@ -19,7 +19,7 @@ import {
 export class NodeCryptoProvider implements TEncryptDecryptProvider {
   constructor(
     @Inject(ENCRYPT_DECRYPT_PROVIDER_OPTIONS)
-    private readonly options: IEncryptDecryptProviderOptions,
+    private readonly options: IEncryptDecryptProviderOptionsModel,
   ) {}
 
   encrypt(text: string): string {

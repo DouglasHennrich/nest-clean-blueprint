@@ -35,20 +35,18 @@ export const Normalize = {
   snakeCase(str: string): string {
     return str
       .replace(/([a-z0-9])([A-Z])/g, '$1_$2') // camelCase -> snake_case
-      .replace(/[\s-]+/g, '_') // espaços e hífens -> underscore
+      .replace(/[\s-]+/g, '_') // spaces and hyphens -> underscore
       .toLowerCase();
   },
 
   realIp(req: Request): string {
-    // Tenta extrair o IP real dos headers comuns de proxy
+    // Attempts to extract the real IP from common proxy headers
     const xForwardedFor = req.headers['x-forwarded-for'];
     const xRealIp = req.headers['x-real-ip'];
 
     if (xForwardedFor) {
-      // x-forwarded-for pode conter múltiplos IPs, pegamos o primeiro
-      const ips = Array.isArray(xForwardedFor)
-        ? xForwardedFor[0]
-        : xForwardedFor.split(',')[0];
+      // x-forwarded-for may contain multiple IPs, we take the first one
+      const ips = Array.isArray(xForwardedFor) ? xForwardedFor[0] : xForwardedFor.split(',')[0];
       return ips.trim();
     }
 

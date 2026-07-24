@@ -61,6 +61,19 @@ import {
 import { BackofficeFlushRequestLogQueueController } from './controllers/request-logs/backoffice-flush-request-log-queue.controller';
 import { BackofficeGetRequestLogController } from './controllers/request-logs/backoffice-get-request-log.controller';
 import { BackofficeListRequestLogsController } from './controllers/request-logs/backoffice-list-request-logs.controller';
+import {
+  IBackofficeConfigsPresenter,
+  BackofficeConfigsPresenter,
+} from './presenters/configs/backoffice-configs.presenter';
+import {
+  IBackofficeRequestLogPresenter,
+  BackofficeRequestLogPresenter,
+} from './presenters/request-logs/backoffice-request-log.presenter';
+import {
+  IBackofficeAuditLogPresenter,
+  BackofficeAuditLogPresenter,
+} from './presenters/audit-logs/backoffice-audit-log.presenter';
+import { BackofficeGuard } from './guards/backoffice.guard';
 
 @Module({
   imports: [
@@ -93,6 +106,11 @@ import { BackofficeListRequestLogsController } from './controllers/request-logs/
   ],
   providers: [
     // ================================================
+    // Guards
+    // ================================================
+    BackofficeGuard,
+
+    // ================================================
     // Repositories
     // ================================================
     /// //////////////////////////
@@ -117,6 +135,22 @@ import { BackofficeListRequestLogsController } from './controllers/request-logs/
     {
       provide: IBackofficeAuditLogsRepository,
       useClass: BackofficeAuditLogsRepository,
+    },
+
+    // ================================================
+    // Presenters
+    // ================================================
+    {
+      provide: IBackofficeConfigsPresenter,
+      useClass: BackofficeConfigsPresenter,
+    },
+    {
+      provide: IBackofficeRequestLogPresenter,
+      useClass: BackofficeRequestLogPresenter,
+    },
+    {
+      provide: IBackofficeAuditLogPresenter,
+      useClass: BackofficeAuditLogPresenter,
     },
 
     // ================================================

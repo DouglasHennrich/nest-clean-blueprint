@@ -1,29 +1,28 @@
-import { Controller, Post } from '@nestjs/common';
-import { IRequestContext } from '@/@shared/protocols/request-context.struct';
-import { ReqContext } from '@/@decorators/request-context.decorator';
-import { AbstractApplicationException } from '@/@shared/errors/abstract-application-exception';
+import { Controller, Post, UseGuards } from '@nestjs/common';
 import { TBackofficeFlushRequestLogQueueService } from '../../services/request-logs/backoffice-flush-request-log-queue.service';
 import { BackofficeToken } from '../../decorators/backoffice.decorator';
+import { BackofficeGuard } from '../../guards/backoffice.guard';
+import { IBackofficeRequestLogPresenter } from '../../presenters/request-logs/backoffice-request-log.presenter';
 
 @Controller('backoffice/request-logs/queue/flush-queue')
+@UseGuards(BackofficeGuard)
 export class BackofficeFlushRequestLogQueueController {
   constructor(
     private flushRequestLogQueueService: TBackofficeFlushRequestLogQueueService,
+    private requestLogPresenter: IBackofficeRequestLogPresenter,
   ) {}
 
   @BackofficeToken()
   @Post()
-  async flushRequestLogQueue(@ReqContext() context: IRequestContext) {
+  async flushRequestLogQueue() {
     const result = await this.flushRequestLogQueueService.execute();
 
     if (result.error) {
-      if (result.error instanceof AbstractApplicationException) {
-        result.error.context = context;
-      }
-
       throw result.error;
     }
 
-    return { message: 'request-log-flush job triggered successfully' };
+    return this.requestLogPresenter.presentSuccess({
+      message: 'request-log-flush job triggered successfully',
+    });
   }
 }

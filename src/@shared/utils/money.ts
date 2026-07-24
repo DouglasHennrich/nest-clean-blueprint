@@ -12,13 +12,16 @@ class ExtendedCurrency {
       this._decimal = new Decimal(value);
       this._intValue = this._decimal.times(100).round().toNumber();
     } else {
-      const normalizedValue = Number(Normalize.onlyNumbers(`${value}`));
+      const rawValue = `${value}`.trim();
+      const isNegative = rawValue.startsWith('-');
+      const digitsOnly = Normalize.onlyNumbers(rawValue);
+      const normalizedValue = Number(digitsOnly) * (isNegative ? -1 : 1);
       this._intValue = normalizedValue;
       this._decimal = new Decimal(normalizedValue).div(100);
     }
   }
 
-  // Expor todos os métodos originais com compatibilidade
+  // Expose all original methods with compatibility
   get value() {
     return this._decimal.toNumber();
   }
@@ -41,8 +44,7 @@ class ExtendedCurrency {
     }
 
     const valueAsDecimal = new Decimal(value);
-    const newIntValue =
-      this._intValue + valueAsDecimal.times(100).round().toNumber();
+    const newIntValue = this._intValue + valueAsDecimal.times(100).round().toNumber();
     return new ExtendedCurrency(newIntValue);
   }
 
@@ -52,8 +54,7 @@ class ExtendedCurrency {
     }
 
     const valueAsDecimal = new Decimal(value);
-    const newIntValue =
-      this._intValue - valueAsDecimal.times(100).round().toNumber();
+    const newIntValue = this._intValue - valueAsDecimal.times(100).round().toNumber();
     return new ExtendedCurrency(newIntValue);
   }
 
@@ -70,16 +71,16 @@ class ExtendedCurrency {
   divide(value: number | ExtendedCurrency) {
     if (value instanceof ExtendedCurrency) {
       const result = this._decimal.dividedBy(value._decimal);
-      // Cria uma nova instância preservando frações de centavos
+      // Create a new instance preserving cent fractions
       return this.createWithDecimalCents(result.times(100));
     }
 
     const result = this._decimal.dividedBy(value);
-    // Cria uma nova instância preservando frações de centavos
+    // Create a new instance preserving cent fractions
     return this.createWithDecimalCents(result.times(100));
   }
 
-  // Método privado para criar instâncias com frações de centavos
+  // Private method to create instances with cent fractions
   private createWithDecimalCents(centsDecimal: Decimal): ExtendedCurrency {
     const instance = new ExtendedCurrency(0);
     instance._decimal = centsDecimal.div(100);
@@ -89,10 +90,7 @@ class ExtendedCurrency {
 
   distribute(count: number): Array<ExtendedCurrency> {
     const countDecimal = new Decimal(count);
-    const baseAmount = new Decimal(this._intValue)
-      .dividedBy(countDecimal)
-      .floor()
-      .toNumber();
+    const baseAmount = new Decimal(this._intValue).dividedBy(countDecimal).floor().toNumber();
     const remainder = this._intValue % count;
 
     const results: ExtendedCurrency[] = [];
@@ -105,26 +103,23 @@ class ExtendedCurrency {
   }
 
   toString(precision?: number) {
-    const value = this._decimal.toFixed(precision || 2);
+    const p = precision ?? 2;
+    const value = this._decimal.toFixed(p);
 
     return `${parseFloat(value).toLocaleString('pt-BR', {
-      minimumFractionDigits: precision || 2,
-      maximumFractionDigits: precision || 2,
+      minimumFractionDigits: p,
+      maximumFractionDigits: p,
     })}`;
   }
 
-  // Método para obter representação com precisão completa
+  // Method to get the full-precision representation
   toStringExact() {
     const value = this._decimal.toFixed();
 
     return value;
   }
 
-  format(opts?: {
-    symbol?: string;
-    separator?: string;
-    decimal?: string;
-  }): string {
+  format(opts?: { symbol?: string; separator?: string; decimal?: string }): string {
     const symbol = opts?.symbol || '';
     const separator = opts?.separator || '.';
     const decimal = opts?.decimal || ',';
@@ -132,11 +127,8 @@ class ExtendedCurrency {
     const value = this._decimal.toFixed(2);
     const [integerPart, decimalPart] = value.split('.');
 
-    // Adiciona separadores de milhares
-    const formattedInteger = integerPart.replace(
-      /\B(?=(\d{3})+(?!\d))/g,
-      separator,
-    );
+    // Add thousands separators
+    const formattedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, separator);
 
     return `${symbol}${formattedInteger}${decimal}${decimalPart}`;
   }
@@ -175,9 +167,9 @@ const BRL = (value: number | string, alreadyFormatted = false) =>
 
 export { BRL, ExtendedCurrency };
 
-// Fluxo de uso:
+// Usage flow:
 /*
-1 - sempre remover as pontuações do valor para ser utilizado -> 1.234,56 -> 123456 -> BRL(123456)
-2 - para salvar no banco de dados, transformar para intValue + toString() -> BRL(123456).intValue.toString()
+1 - always strip punctuation from the value before use -> 1.234,56 -> 123456 -> BRL(123456)
+2 - to save to the database, convert to intValue + toString() -> BRL(123456).intValue.toString()
 
 */

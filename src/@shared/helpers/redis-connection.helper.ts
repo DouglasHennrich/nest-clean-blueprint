@@ -1,7 +1,7 @@
 import Redis from 'ioredis';
 import { TEnvService } from '@/modules/env/services/env.service';
 
-export interface IRedisConnectionOptions {
+export interface IRedisConnectionOptionsModel {
   host: string;
   port: number;
 }
@@ -18,16 +18,12 @@ export class RedisConnectionHelper {
   /**
    * Get Redis connection options from environment
    */
-  static getConnectionOptions(
-    envService: TEnvService,
-  ): IRedisConnectionOptions {
+  static getConnectionOptions(envService: TEnvService): IRedisConnectionOptionsModel {
     const host = envService.get('REDIS_HOST');
     const port = envService.get('REDIS_PORT');
 
     if (!host || !port) {
-      throw new Error(
-        'Missing required Redis environment variables: REDIS_HOST, REDIS_PORT',
-      );
+      throw new Error('Missing required Redis environment variables: REDIS_HOST, REDIS_PORT');
     }
 
     return { host, port };

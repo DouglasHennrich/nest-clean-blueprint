@@ -1,13 +1,13 @@
 import { Result } from '@/@shared/classes/result';
 
-export interface ICacheOptions {
+export interface ICacheOptionsModel {
   /** TTL in seconds. Default: 3600 */
   ttl?: number;
   /** If false, key never expires. Default: true */
   shouldExpire?: boolean;
 }
 
-export const DEFAULT_CACHE_OPTIONS: Required<ICacheOptions> = {
+export const DEFAULT_CACHE_OPTIONS: Required<ICacheOptionsModel> = {
   ttl: 3600,
   shouldExpire: true,
 };
@@ -25,24 +25,16 @@ export abstract class TAbstractCache {
   abstract get<T>(
     key: string,
     fetchFn: () => Promise<Result<T>>,
-    options?: ICacheOptions,
+    options?: ICacheOptionsModel,
   ): Promise<Result<T>>;
 
-  abstract set<T>(
-    key: string,
-    value: T,
-    options?: ICacheOptions,
-  ): Promise<void>;
+  abstract set<T>(key: string, value: T, options?: ICacheOptionsModel): Promise<void>;
 
   /** Simple get without Result wrapper — for counters and locks. */
   abstract getSimple<T>(key: string): Promise<T | undefined>;
 
   /** Simple set without Result wrapper — for counters and locks. */
-  abstract setSimple<T>(
-    key: string,
-    value: T,
-    ttlSeconds?: number,
-  ): Promise<void>;
+  abstract setSimple<T>(key: string, value: T, ttlSeconds?: number): Promise<void>;
 
   abstract delete(key: string): Promise<void>;
   abstract clear(): Promise<void>;

@@ -44,15 +44,10 @@ export class CleanupExpiredRecordsCronService {
   }
 
   private async acquireLock(): Promise<boolean> {
-    const existing =
-      await this.cacheService.getSimple<string>(CLEANUP_LOCK_KEY);
+    const existing = await this.cacheService.getSimple<string>(CLEANUP_LOCK_KEY);
     if (existing) return false;
 
-    await this.cacheService.setSimple<string>(
-      CLEANUP_LOCK_KEY,
-      'locked',
-      CLEANUP_LOCK_TTL_SECONDS,
-    );
+    await this.cacheService.setSimple<string>(CLEANUP_LOCK_KEY, 'locked', CLEANUP_LOCK_TTL_SECONDS);
     return true;
   }
 
